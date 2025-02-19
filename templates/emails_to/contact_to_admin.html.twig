@@ -1,0 +1,155 @@
+{# <!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Nouveau Message de Contact | AuthenticPage</title>
+		<style>
+			@media screen and(max-width: 600px) {
+				.container {
+					width: 100% !important;
+				}
+				.button {
+					width: 100% !important;
+				}
+			}
+		</style>
+	</head>
+	<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #374151;">
+		<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+			<tr>
+				<td style="padding: 20px 0;">
+					<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;" class="container">
+						<tr>
+							<td style="background: linear-gradient(135deg, #4F46E5, #6366F1); padding: 32px 20px; text-align: center;">
+								<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" style="width: 120px; height: auto; margin-bottom: 16px;">
+								<h1 style="color: #ffffff; margin: 0;">Nouveau Message de Contact</h1>
+							</td>
+						</tr>
+						<tr>
+							<td style="padding: 32px 24px;">
+								<p style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">Bonjour Administrateur,</p>
+								<p>Un nouveau message a été envoyé via le formulaire de contact sur AuthenticPage.</p>
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; background-color: #F3F4F6; border-radius: 8px; padding: 16px;">
+									<tr>
+										<td>
+											<h2 style="margin: 0 0 16px; font-size: 18px;">Détails du message :</h2>
+											<p>
+												<strong>Nom :</strong>
+												{{ contact.name }}</p>
+											<p>
+												<strong>Email :</strong>
+												{{ contact.email }}</p>
+											<p>
+												<strong>Sujet :</strong>
+												{{ contact.subject }}</p>
+											<p>
+												<strong>Message :</strong>
+											</p>
+											<p style="background-color: #ffffff; padding: 12px; border-radius: 4px;">{{ contact.object }}</p>
+
+
+										</td>
+									</tr>
+								</table>
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+									<tr>
+										<td>
+											<a href="https://authenticpage.com/admin/contacts" style="background-color: #4F46E5; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;" class="button">Voir tous les messages</a>
+										</td>
+									</tr>
+								</table>
+								<p>Veuillez traiter ce message dès que possible.</p>
+							</td>
+						</tr>
+						<tr>
+							<td style="background-color: #F9FAFB; padding: 24px; text-align: center; border-top: 1px solid #E5E7EB;">
+								<p style="margin: 0 0 16px;">Cordialement,<br>Système de Notification AuthenticPage</p>
+								<p style="margin: 0; font-size: 14px; color: #6B7280;">
+									<a href="https://twitter.com/authenticpage" style="color: #4F46E5; text-decoration: none;">Twitter</a>
+									|
+									<a href="https://linkedin.com/company/authenticpage" style="color: #4F46E5; text-decoration: none;">LinkedIn</a>
+									|
+									<a href="https://authenticpage.com" style="color: #4F46E5; text-decoration: none;">Site Web</a>
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html> #}
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>New Contact Message | AuthenticPage</title>
+		<style>
+			@media screen and(max-width: 600px) {
+				.container {
+					width: 100% !important;
+				}
+				.button {
+					width: 100% !important;
+				}
+			}
+		</style>
+	</head>
+	<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #374151;">
+		<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+			<tr>
+				<td style="padding: 20px 0;">
+					<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;" class="container">
+						<tr>
+							<td style="background: linear-gradient(135deg, #4F46E5, #6366F1); padding: 32px 20px; text-align: center;">
+								<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" style="width: 120px; height: auto; margin-bottom: 16px;">
+								<h1 style="color: #ffffff; margin: 0;">New Contact Message</h1>
+							</td>
+						</tr>
+						<tr>
+							<td style="padding: 32px 24px;">
+								<p style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">Hello Administrator,</p>
+								<p>A new message has been sent via the contact form on AuthenticPage.</p>
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; background-color: #F3F4F6; border-radius: 8px; padding: 16px;">
+									<tr>
+										<td>
+											<h2 style="margin: 0 0 16px; font-size: 18px;">Message details:</h2>
+											<p>
+												<strong>Name:</strong>
+												{{ contact.name }}</p>
+											<p>
+												<strong>Email:</strong>
+												{{ contact.email }}</p>
+											<p>
+												<strong>Subject:</strong>
+												{{ contact.subject }}</p>
+											<p>
+												<strong>Message:</strong>
+											</p>
+											<p style="background-color: #ffffff; padding: 12px; border-radius: 4px;">{{ contact.object }}</p>
+
+
+										</td>
+									</tr>
+								</table>
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+									<tr>
+										<td>
+											<a href="https://authenticpage.com/admin/contacts" style="background-color: #4F46E5; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;" class="button">View all messages</a>
+										</td>
+									</tr>
+								</table>
+								<p>Please process this message as soon as possible.</p>
+							</td>
+						</tr>
+						{% include './footer.html.twig' %}
+
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

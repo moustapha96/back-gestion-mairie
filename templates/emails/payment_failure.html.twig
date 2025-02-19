@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Échec de votre paiement</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				background-color: #f9f9f9;
+				color: #333;
+				margin: 0;
+				padding: 20px;
+			}
+			.container {
+				max-width: 600px;
+				margin: auto;
+				background: white;
+				padding: 20px;
+				border-radius: 5px;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+			.header {
+				text-align: center;
+				background-color: #dc3545; /* Rouge */
+				color: white;
+				padding: 10px 0;
+			}
+			.logo {
+				width: 100px; /* Ajustez la taille selon vos besoins */
+			}
+			.footer {
+				text-align: center;
+				font-size: 12px;
+				color: #777;
+				margin-top: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" class="logo">
+				<h1>AuthenticPage</h1>
+			</div>
+
+			<p>Bonjour
+				{{ demandeurName }},</p>
+
+			<p>Nous sommes désolés de vous informer que votre paiement a échoué.</p>
+
+			<p>Détails de l'échec :</p>
+			<ul>
+				<li>Message d'erreur :
+					{{ errorMessage }}</li>
+				<li>Date de la tentative :
+					{{ dateAttempt }}</li>
+				<!-- Optionally add more details if needed -->
+			</ul>
+
+			<p>Veuillez vérifier vos informations ou réessayer plus tard.</p>
+
+			<p>Cordialement,<br/>L'équipe
+				{{ nombase }}</p>
+
+			<div class="footer">
+				<p>Cordialement,<br>L'équipe AuthenticPage</p>
+			</div>
+		</div>
+	</body>
+</html>

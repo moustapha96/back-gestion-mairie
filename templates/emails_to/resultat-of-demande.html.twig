@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Request Result | AuthenticPage</title>
+		<style>
+			@media screen and(max-width: 600px) {
+				.container {
+					width: 100% !important;
+				}
+				.button {
+					width: 100% !important;
+				}
+			}
+		</style>
+	</head>
+	<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #374151;">
+		<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+			<tr>
+				<td style="padding: 20px 0;">
+					<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;" class="container">
+						<tr>
+							<td style="background: linear-gradient(135deg, #4F46E5, #6366F1); padding: 32px 20px; text-align: center;">
+								<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" style="width: 120px; height: auto; margin-bottom: 16px;">
+								<h1 style="color: #ffffff; margin: 0;">Request Result</h1>
+							</td>
+						</tr>
+						<tr>
+							<td style="padding: 32px 24px;">
+								<p style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">
+									Dear
+									{{ demandeurName }},</p>
+
+								<p>We are pleased to inform you that the result of your request is now available.</p>
+
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; background-color: #F3F4F6; border-radius: 8px; padding: 16px;">
+									<tr>
+										<td>
+											<h2 style="margin: 0 0 16px; font-size: 18px;">Request Details:</h2>
+											<p>
+												<strong>Request Status:</strong>
+												{{ statutDemande }}</p>
+											<p>
+												<strong>Details:</strong>
+												{{ detailsDemande }}</p>
+
+											<p>
+												<strong>Date request :</strong>
+												{{ dateDemande }}
+											</p>
+										</td>
+									</tr>
+								</table>
+
+								<p>If you have any questions, please feel free to contact our support team at support@authenticpage.com.</p>
+							</td>
+						</tr>
+						{% include './footer.html.twig' %}
+
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

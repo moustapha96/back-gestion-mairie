@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Confirmation de votre Demande | AuthenticPage</title>
+		<style>:root
+		{
+			--primary-color: #4F46E5;
+			--secondary-color: #6366F1;
+			--background-color: #F3F4F6;
+			--text-color: #374151;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: var(--background-color);
+			font-family: Arial, sans-serif;
+			font-size: 16px;
+			line-height: 1.6;
+			color: var(--text-color);
+		}
+
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+			background-color: #ffffff;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		.header {
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			padding: 32px 20px;
+			text-align: center;
+			color: #ffffff;
+		}
+
+		.logo {
+			width: 120px;
+			height: auto;
+			margin-bottom: 16px;
+		}
+
+		.content {
+			padding: 32px 24px;
+		}
+
+		.greeting {
+			font-size: 20px;
+			font-weight: 600;
+			margin-bottom: 16px;
+		}
+
+		.message {
+			margin-bottom: 24px;
+		}
+
+		.footer {
+			background-color: #F9FAFB;
+			padding: 24px;
+			text-align: center;
+			border-top: 1px solid #E5E7EB;
+		}
+
+		.footer p {
+			color: #6B7280;
+			font-size: 14px;
+			margin: 8px 0;
+		}
+
+		.footer a {
+			color: var(--primary-color);
+			text-decoration: none;
+			margin: 0 4px;
+		}
+
+		@media screen and(max-width: 600px) {
+			.container {
+				width: 100% !important;
+			}
+			.content {
+				padding: 24px 16px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+		<tr>
+			<td style="padding: 20px 0;">
+				<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="container">
+					<tr>
+						<td style="background: linear-gradient(135deg, #4F46E5, #6366F1); padding: 32px 20px; text-align: center;">
+							<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" style="width: 120px; height: auto; margin-bottom: 16px;">
+							<h1 style="color: #ffffff; margin: 0;">Confirmation de votre demande</h1>
+						</td>
+
+					</tr>
+					<tr>
+						<td style="padding: 32px 24px;">
+							<p style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">Bonjour
+								{{ demandeurName }},</p>
+
+							<p>Nous sommes ravis de vous accueillir sur AuthenticPage. Votre compte Institut a été créé avec succès. Pour commencer à utiliser nos services, veuillez activer votre compte en cliquant sur le bouton ci-dessous :</p>
+							<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+								<tr>
+									<td align="center">
+										<a href="{{ activationUrl }}" style="background-color: #4F46E5; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;" class="button">Activer mon compte</a>
+									</td>
+								</tr>
+							</table>
+							<p>Une fois votre compte activé, vous pourrez :</p>
+							<ul style="padding-left: 20px; margin-bottom: 24px;">
+								<li>Gérer les demandes d'authentification</li>
+								<li>Accéder à votre tableau de bord personnalisé</li>
+								<li>Mettre à jour les informations de votre institut</li>
+							</ul>
+							<p>Si vous n'avez pas demandé la création de ce compte, veuillez ignorer cet e-mail ou contacter notre équipe de support.</p>
+							<p>Pour toute question ou assistance, n'hésitez pas à nous contacter à support@authenticpage.com.</p>
+						</td>
+					</tr>
+
+
+				</tr>
+			</td>
+		</tr>
+		<tr>
+			<td class="footer">
+				<p>Cordialement,<br>L'équipe AuthenticPage</p>
+				<div class="social-links">
+					<a href="https://twitter.com/authenticpage">Twitter</a>
+					|
+					<a href="https://linkedin.com/company/authenticpage">LinkedIn</a>
+					|
+					<a href="https://authenticpage.com">Site Web</a>
+				</div>
+				<p>
+					<small>Si vous n'avez pas créé de compte institution sur AuthenticPage, veuillez ignorer cet email.</small>
+				</p>
+				<p>
+					<small>Pour toute assistance, contactez notre support dédié aux institutions : support-institution@authenticpage.com</small>
+				</p>
+			</td>
+		</tr>
+	</table>
+</body></html>

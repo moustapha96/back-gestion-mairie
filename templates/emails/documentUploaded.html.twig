@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Document téléchargé</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				background-color: #f9f9f9;
+				color: #333;
+				margin: 0;
+				padding: 20px;
+			}
+			.container {
+				max-width: 600px;
+				margin: auto;
+				background: white;
+				padding: 20px;
+				border-radius: 5px;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+			.header {
+				text-align: center;
+				background-color: #ff0000; /* Rouge */
+				color: white;
+				padding: 10px 0;
+			}
+			.logo {
+				width: 100px; /* Ajustez la taille selon vos besoins */
+			}
+			.footer {
+				text-align: center;
+				font-size: 12px;
+				color: #777;
+				margin-top: 20px;
+			}
+			a.button {
+				display: inline-block;
+				background-color: #0000ff; /* Bleu */
+				color: white;
+				padding: 10px 20px;
+				text-decoration: none;
+				border-radius: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" class="logo">
+				<h1>AuthenticPage</h1>
+			</div>
+
+			<p>Bonjour,</p>
+
+			<p>Votre document "{{ documentName }}" a été uploadé avec succès.</p>
+			<p>Vous pouvez le télécharger en suivant ce lien :
+				<a href="{{ downloadUrl }}">Télécharger le document</a>
+			</p>
+			<p>Cordialement,<br/>L'équipe
+				{{ nombase }}</p>
+
+			<p>Merci et bonne réception !</p>
+
+			<div class="footer">
+				<p>Cordialement,<br>
+					L'équipe AuthenticPage</p>
+			</div>
+		</div>
+	</body>
+</html>

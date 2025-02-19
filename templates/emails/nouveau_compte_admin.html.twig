@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Activation de Compte Administrateur | AuthenticPage</title>
+		<style>:root
+		{
+			--primary-color: #4F46E5;
+			--secondary-color: #6366F1;
+			--background-color: #F3F4F6;
+			--text-color: #374151;
+		}
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: 'Arial', sans-serif;
+			background-color: var(--background-color);
+			color: var(--text-color);
+			line-height: 1.6;
+			padding: 20px;
+		}
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+		.header {
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			color: white;
+			padding: 32px 20px;
+			text-align: center;
+		}
+		.logo {
+			width: 120px;
+			height: auto;
+			margin-bottom: 16px;
+		}
+		.content {
+			padding: 32px 24px;
+		}
+		.greeting {
+			font-size: 20px;
+			font-weight: 600;
+			margin-bottom: 16px;
+			color: var(--primary-color);
+		}
+		.message {
+			margin-bottom: 24px;
+			color: var(--text-color);
+		}
+		.button-container {
+			text-align: center;
+			margin: 32px 0;
+		}
+		.button {
+			display: inline-block;
+			background-color: var(--primary-color);
+			color: white;
+			padding: 14px 32px;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			transition: background-color 0.3s ease;
+		}
+		.button:hover {
+			background-color: var(--secondary-color);
+		}
+		.footer {
+			background-color: #F9FAFB;
+			padding: 24px;
+			text-align: center;
+			border-top: 1px solid #E5E7EB;
+		}
+		.footer p {
+			color: #6B7280;
+			font-size: 14px;
+			margin: 8px 0;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" class="logo">
+			<h1>Bienvenue sur AuthenticPage</h1>
+		</div>
+
+		<div class="content">
+			<p class="greeting">Bonjour
+				{{ user.username }},</p>
+
+			<div class="message">
+				<p>Merci d'avoir rejoint AuthenticPage en tant qu'administrateur ! Nous sommes ravis de vous accueillir sur notre plateforme.</p>
+				<p>Pour activer votre compte, veuillez cliquer sur le bouton ci-dessous :</p>
+			</div>
+
+			<div class="button-container">
+				<a href="{{ activationUrl }}" class="button">Activer mon compte</a>
+			</div>
+
+			<p class="message">
+				Si le bouton ne fonctionne pas, vous pouvez copier et coller le lien suivant dans votre navigateur :<br>
+				<small>{{ activationUrl }}</small>
+			</p>
+
+			<p class="message">
+				Une fois votre compte activé, vous pourrez :
+				<ul style="margin-left: 20px; margin-top: 8px;">
+					<li>Gérer votre profil administrateur</li>
+					<li>Accéder à votre tableau de bord personnalisé</li>
+					<li>Utiliser tous les services dédiés aux administrateurs</li>
+				</ul>
+			</p>
+		</div>
+
+		<div class="footer">
+			<p>Cordialement,<br>L'équipe AuthenticPage</p>
+			<div class="social-links">
+				<a href="https://twitter.com/authenticpage">Twitter</a>
+				|
+				<a href="https://linkedin.com/company/authenticpage">LinkedIn</a>
+				|
+				<a href="https://authenticpage.com">Site Web</a>
+			</div>
+			<p>
+				<small>Si vous n'avez pas créé de compte institution sur AuthenticPage, veuillez ignorer cet email.</small>
+			</p>
+			<p>
+				<small>Pour toute assistance, contactez notre support dédié aux institutions : support-institution@authenticpage.com</small>
+			</p>
+
+		</div>
+
+	</div>
+</body></html>
