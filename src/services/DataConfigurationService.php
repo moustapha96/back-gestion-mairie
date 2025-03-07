@@ -14,41 +14,10 @@ class DataConfigurationService
         $this->configurationRepository = $configurationRepository;
     }
 
-    public function getLogo1(): ?string
-    {
-        // Implémentez la logique pour récupérer et retourner la valeur de logo1
-        return $this->configurationRepository->findOneBy(['cle' => 'logo1'])->getValeur();
-    }
-
-    public function getLogo2(): ?string
-    {
-        // Implémentez la logique pour récupérer et retourner la valeur de logo2
-        return $this->configurationRepository->findOneBy(['cle' => 'logo2'])->getValeur();
-    }
-
-    public function getName(): ?string
-    {
-        return $this->configurationRepository->findOneBy(['cle' => 'name'])->getValeur();
-    }
-
-    public function getTel(): ?string
-    {
-        return $this->configurationRepository->findOneBy(['cle' => 'tel'])->getValeur();
-    }
 
     public function getEmail(): ?string
     {
         return $this->configurationRepository->findOneBy(['cle' => 'email'])->getValeur();
-    }
-
-    public function getTitle1(): ?string
-    {
-        return $this->configurationRepository->findOneBy(['cle' => 'title_1'])->getValeur();
-    }
-
-    public function getTitle2(): ?string
-    {
-        return $this->configurationRepository->findOneBy(['cle' => 'title_2'])->getValeur();
     }
     public function getLinkedin(): ?string
     {
@@ -68,13 +37,31 @@ class DataConfigurationService
         return $this->configurationRepository->findOneBy(['cle' => 'youtube'])->getValeur();
     }
 
-    public function getPrixDemandeur(): ?int
-    {
 
-        return $this->configurationRepository->findOneBy(['cle' => 'prixDemandeur'])->getValeur();
-    }
-    public function getPrixInstitut(): ?int
+
+
+    public function getTitre(): ?string
     {
-        return $this->configurationRepository->findOneBy(['cle' => 'prixInstitut'])->getValeur();
+        return $this->configurationRepository->findOneBy(['cle' => 'titre'])->getValeur();
+    }
+
+    public function getNomMaire(): ?string
+    {
+        return $this->configurationRepository->findOneBy(['cle' => 'nomMaire'])->getValeur();
+    }
+
+    public function getTelephone(): ?string
+    {
+        return $this->configurationRepository->findOneBy(['cle' => 'telephone'])->getValeur();
+    }
+
+    public function getSiteWeb(): ?string
+    {
+        return $this->configurationRepository->findOneBy(['cle' => 'siteWeb'])->getValeur();
+    }
+
+    public function getAdresse(): ?string
+    {
+        return $this->configurationRepository->findOneBy(['cle' => 'adresse'])->getValeur();
     }
 }

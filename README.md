@@ -127,3 +127,22 @@ https://www.youtube.com/watch?v=cYoNDoa4_jE&t=2s#
 
 composer clear-cache
 
+php bin/console cache:clear
+
+
+<!-- install certificat -->
+
+symfony.exe server:ca:install
+
+php bin/console doctrine:database:create
+ php bin/console doctrine:schema:create  
+
+ verifier la base de donnees : php bin/console doctrine:schema:validate
+
+
+-----------------------------------------
+
+Installer smalot/pdfparser pour extraire le contenu du PDF :
+Exécute cette commande avec Composer :
+
+ composer require smalot/pdfparser --ignore-platform-req=ext-sodium

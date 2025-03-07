@@ -54,6 +54,10 @@ services:
         autowire: true  
         autoconfigure: true
 
+    App\services\FonctionsService:
+        autowire: true  
+        autoconfigure: true
+
     # App\EventListener\ResponseListener:
     #     tags:
     #         - { name: kernel.event_listener, event: kernel.view, method: onKernelView }

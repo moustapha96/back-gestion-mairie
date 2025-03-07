@@ -30,10 +30,61 @@ class LotController extends AbstractController
         $resultats = [];
 
         foreach ($lots as $lot) {
-            $resultats[] = $lot->toArray();
+            $resultats[] = [
+                'id' => $lot->getId(),
+                'numeroLot' => $lot->getNumeroLot(),
+                'superficie' => $lot->getSuperficie(),
+                'typeUsage' => $lot->getUsage(),
+                'statut' => $lot->getStatut(),
+                'prix' => $lot->getPrix(),
+                'longitude' => $lot->getLongitude(),
+                'latitude' => $lot->getLatitude(),
+                'lotissement' => [
+                    'id' => $lot->getLotissement()->getId(),
+                    'nom' => $lot->getLotissement()->getNom(),
+                    'localisation' => $lot->getLotissement()->getLocalisation(),
+                    'description' => $lot->getLotissement()->getDescription(),
+                    'statut' => $lot->getLotissement()->getStatut(),
+                    'dateCreation' => $lot->getLotissement()->getDateCreation()->format('Y-m-d'),
+                    'longitude' => $lot->getLotissement()->getLongitude(),
+                    'latitude' => $lot->getLotissement()->getLatitude(),
+                ]
+            ];
         }
         return $this->json($resultats, 200);
     }
+
+
+    #[Route('/api/lot/{id}/details', name: 'api_lot_detail', methods: ['GET'])]
+    public function detailLot($id, LotsRepository $lotsRepository): Response
+    {
+        $lot = $lotsRepository->find($id);
+        if (!$lot) {
+            return $this->json('Lot introuvable', 404);
+        }
+        $resultats = [
+            'id' => $lot->getId(),
+            'numeroLot' => $lot->getNumeroLot(),
+            'superficie' => $lot->getSuperficie(),
+            'typeUsage' => $lot->getUsage(),
+            'statut' => $lot->getStatut(),
+            'prix' => $lot->getPrix(),
+            'longitude' => $lot->getLongitude(),
+            'latitude' => $lot->getLatitude(),
+            'lotissement' => [
+                'id' => $lot->getLotissement()->getId(),
+                'nom' => $lot->getLotissement()->getNom(),
+                'localisation' => $lot->getLotissement()->getLocalisation(),
+                'description' => $lot->getLotissement()->getDescription(),
+                'statut' => $lot->getLotissement()->getStatut(),
+                'dateCreation' => $lot->getLotissement()->getDateCreation()->format('Y-m-d'),
+                'longitude' => $lot->getLotissement()->getLongitude(),
+                'latitude' => $lot->getLotissement()->getLatitude(),
+            ]
+        ];
+        return $this->json($resultats, 200);
+    }
+
 
     #[Route('/api/lot/create', name: 'api_lot_create', methods: ['POST'])]
     public function createLot(
@@ -58,15 +109,16 @@ class LotController extends AbstractController
         $lot->setUsage($data['usage'] ?? null);
         $lot->setSuperficie($data['superficie'] ?? null);
         $lot->setStatut($data['statut']);
+        $lot->setLongitude($data['longitude'] ?? null);
+        $lot->setLatitude($data['latitude'] ?? null);
         $lot->setLotissement($lotissement);
 
         $this->em->persist($lot);
         $this->em->flush();
-
         return $this->json($lot->toArray(), Response::HTTP_CREATED);
     }
 
-    #[Route('/api/lots/{id}/update', name: 'api_lot_update', methods: ['PUT'])]
+    #[Route('/api/lot/{id}/update', name: 'api_lot_update', methods: ['PUT'])]
     public function updateLot(int $id, Request $request, LotsRepository $lotsRepository): Response
     {
         $lot = $lotsRepository->find($id);
@@ -93,10 +145,34 @@ class LotController extends AbstractController
         if (isset($data['prix'])) {
             $lot->setPrix($data['prix']);
         }
-
+        if (isset($data['longitude'])) {
+            $lot->setLongitude($data['longitude']);
+        }
+        if (isset($data['latitude'])) {
+            $lot->setLatitude($data['latitude']);
+        }
         $this->em->persist($lot);
         $this->em->flush();
 
         return $this->json($lot->toArray(), Response::HTTP_OK);
+    }
+
+
+
+    #[Route('/api/lot/{id}/update-statut', name: 'api_lot_update_statut', methods: ['PUT'])]
+    public function updateLotStatut(int $id, Request $requet, LotsRepository $lotsRepository): Response
+    {
+        $lot = $lotsRepository->find($id);
+        if (!$lot) {
+            return $this->json("Lot non trouvée", Response::HTTP_NOT_FOUND);
+        }
+        $data = json_decode($requet->getContent(), true);
+
+        $statut = $data['statut'];
+        $lot->setStatut($statut);
+        $this->em->persist($lot);
+        $this->em->flush();
+
+        return $this->json("Statut mis à jour", Response::HTTP_OK);
     }
 }

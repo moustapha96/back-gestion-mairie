@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\ParcelleRepository;
+
+use ApiPlatform\Metadata\ApiResource;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity(repositoryClass: ParcelleRepository::class)]
+
+#[ApiResource(
+    normalizationContext: ['groups' => ['parcelle:item', 'parcelle:list']],
+    denormalizationContext: ['groups' => ['parcelle:write']],
+    order: ["id" => "DESC"],
+    paginationEnabled: false,
+)]
+
+#[ORM\Table(name: '`gs_mairie_parcelle`')]
+
+class Parcelle
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    #[Groups(groups: ['parcelle:list', 'parcelle:item', 'parcelle:write', 'lotissement:item', 'lotissement:list'])]
+    private ?int $id = null;
+
+    #[Groups(groups: [
+        'parcelle:list',
+        'parcelle:item',
+        'parcelle:write',
+        'lotissement:item',
+        'lotissement:list'
+    ])]
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $numero = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: [
+        'parcelle:list',
+        'parcelle:item',
+        'parcelle:write',
+        'lotissement:item',
+        'lotissement:list'
+    ])]
+    private ?float $surface = null;
+
+    #[ORM\ManyToOne(inversedBy: 'parcelles', fetch: 'EAGER')]
+    #[Groups(groups: [
+        'parcelle:list',
+        'parcelle:item',
+        'parcelle:write'
+    ])]
+    private ?Lotissement $lotissement = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: [
+        'parcelle:list',
+        'parcelle:item',
+        'parcelle:write'
+    ])]
+    private ?string $statut = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getNumero(): ?string
+    {
+        return $this->numero;
+    }
+
+    public function setNumero(?string $numero): static
+    {
+        $this->numero = $numero;
+
+        return $this;
+    }
+
+    public function getSurface(): ?float
+    {
+        return $this->surface;
+    }
+
+    public function setSurface(?float $surface): static
+    {
+        $this->surface = $surface;
+
+        return $this;
+    }
+
+    public function getLotissement(): ?Lotissement
+    {
+        return $this->lotissement;
+    }
+
+    public function setLotissement(?Lotissement $lotissement): static
+    {
+        $this->lotissement = $lotissement;
+
+        return $this;
+    }
+
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(?string $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+}

@@ -1,0 +1,97 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Bienvenue - Votre compte a été créé
+{% endblock %}
+
+{% block header_title %}Bienvenue sur votre espace personnel
+{% endblock %}
+
+{% block content %}
+	<p class="greeting">Bonjour
+		{{ user.prenom }}
+		{{ user.nom }},</p>
+
+	<div class="message">
+		<p>Nous avons le plaisir de vous informer que votre compte  administrateur a été créé avec succès sur la plateforme de Gestion de la Mairie.</p>
+
+		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
+			<h3 style="color: #1E81B0; margin-top: 0;">Vos informations personnelles</h3>
+			<ul style="list-style: none; padding: 0; margin: 10px 0;">
+				<li style="margin-bottom: 8px;">
+					<strong>Nom complet :</strong>
+					{{ user.prenom }}
+					{{ user.nom }}</li>
+
+				<li style="margin-bottom: 8px;">
+					<strong>Email :</strong>
+					{{ user.email }}</li>
+				<li style="margin-bottom: 8px;">
+					<strong>Adresse :</strong>
+					{{ user.adresse }}</li>
+				<li style="margin-bottom: 8px;">
+					<strong>Téléphone :</strong>
+					{{ user.telephone }}</li>
+			</ul>
+		</div>
+
+		<div style="background-color: #E3F2FD; padding: 15px; border: 1px solid #64B5F6; border-radius: 4px; margin: 15px 0;">
+			<h4 style="color: #1565C0; margin-top: 0;">Vos identifiants de connexion</h4>
+			<p style="margin: 5px 0;">
+				<strong>Email :</strong>
+				{{ user.email }}</p>
+			<p style="margin: 5px 0;">
+				<strong>Mot de passe temporaire :</strong>
+				{{ password }}</p>
+			<p style="color: #D32F2F; font-size: 0.9em; margin-top: 10px;">
+				Pour des raisons de sécurité, nous vous recommandons fortement de modifier ce mot de passe dès votre première connexion.
+			</p>
+		</div>
+
+		<div style="margin: 25px 0; text-align: center;">
+			<p style="margin-bottom: 15px;">Pour activer votre compte et commencer à utiliser nos services, cliquez sur le bouton ci-dessous :</p>
+			<a href="{{ activationUrl }}" style="background-color: #1E81B0;
+																								                      color: #EEEEE4;
+																								                      padding: 12px 24px;
+																								                      text-decoration: none;
+																								                      border-radius: 5px;
+																								                      display: inline-block;" class="button">
+				Activer mon compte
+			</a>
+		</div>
+
+		<p style="background-color: #EEEEE4; padding: 10px; border: 1px solid #76B5C5; border-radius: 4px; font-size: 0.9em;">
+			Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>
+			<span style="word-break: break-all; color: #154C79;">{{ activationUrl }}</span>
+		</p>
+
+		<div class="message" style="margin-top: 25px;">
+			<h4 style="color: #1E81B0;">Fonctionnalités disponibles</h4>
+			<ul style="margin-left: 20px;">
+				{% if 'ROLE_ADMIN' in user.roles %}
+					<li>Gestion complète des demandes de terrain</li>
+					<li>Administration des utilisateurs</li>
+					<li>Gestion des paramètres du système</li>
+					<li>Suivi des statistiques et rapports</li>
+				{% elseif 'ROLE_AGENT' in user.roles %}
+					<li>Traitement des demandes de terrain</li>
+					<li>Gestion des dossiers</li>
+					<li>Suivi des demandeurs</li>
+				{% else %}
+					<li>Dépôt de demandes de terrain</li>
+					<li>Suivi de vos demandes en cours</li>
+					<li>Accès à vos documents</li>
+					<li>Mise à jour de votre profil</li>
+				{% endif %}
+			</ul>
+		</div>
+
+		<div style="margin-top: 25px; padding: 15px; background-color: #FFF3E0; border: 1px solid #FFB74D; border-radius: 4px;">
+			<p style="color: #E65100; margin: 0;">
+				<strong>Important :</strong>
+				Pour votre sécurité, ne partagez jamais vos identifiants de connexion avec qui que ce soit.
+			</p>
+		</div>
+	</div>
+
+
+{% endblock %}

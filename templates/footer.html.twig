@@ -1,19 +1,25 @@
 <footer style="background-color: #F9FAFB; padding: 24px; text-align: center; border-top: 1px solid #E5E7EB;">
+	<div style="margin-bottom: 16px;">
+		<h3 style="margin: 0; font-size: 18px; color: #111827;">{{ get_titre() }}</h3>
+		<p style="margin: 8px 0; font-size: 14px; color: #6B7280;">
+			{{ get_adresse() }}<br>
+			Tél :
+			{{ get_telephone() }}<br>
+			Email :
+			<a href="mailto:{{ get_email() }}" style="color: #4F46E5; text-decoration: none;">{{ get_email() }}</a>
+		</p>
+	</div>
 
-
-	<p style="margin: 0; font-size: 14px; color: #6B7280;">
-		<a href="{{ get_twitter() }}" style="color: #4F46E5; text-decoration: none;">Twitter</a>
-		|
-		<a href="{{ get_linkedin() }}" style="color: #4F46E5; text-decoration: none;">LinkedIn</a>
-		|
-		<a href="{{ get_instagram() }}" style="color: #4F46E5; text-decoration: none;">Instagram</a>
+	<p style="margin: 8px 0; font-size: 14px; color: #6B7280;">
+		<a href="{{ get_site_web() }}" style="color: #4F46E5; text-decoration: none;">{{ get_site_web() }}</a>
 	</p>
 
-	<p style="margin: 0; font-size: 14px; color: #6B7280;">
-		&copy; 2024
-		<a href="https://www.authenticpage.com" style="color: #4F46E5; text-decoration: none;">{{ get_name() }}</a>
-		. All rights reserved.
+	<p style="margin: 16px 0 0 0; font-size: 14px; color: #6B7280;">
+		&copy;
+		{{ "now"|date("Y") }}
+		-
+		{{ get_titre() }}
+		- Maire :
+		{{ get_nom_maire() }}
 	</p>
-
-
 </footer>

@@ -28,7 +28,7 @@ class GMailerController extends AbstractController
         if (!$emails ||  !$message || !$sujet) {
             return $this->json('Les données sont imcompletes', 300);
         }
-
+        $resultat = null;
         foreach ($emails as $email) {
             $resultat = $this->mailerService->sendSimplemail($email, $sujet, $message);
         }

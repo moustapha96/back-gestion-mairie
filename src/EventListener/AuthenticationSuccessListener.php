@@ -35,10 +35,13 @@ class AuthenticationSuccessListener
                 }
             }
 
+            $roles = in_array('ROLE_SUPER_ADMIN', $user->getRoles()) ? $user->getRoles() : $user->getRoles()[0];
+
             $data['user'] = [
-                'roles' => $user->getRoles(),
+                'roles' => $roles,
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
+                'activated' => $user->isActiveted(),
                 'avatar' => $user->getAvatar(),
                 'username' => $user->getUsername(),
                 'prenom' => $user->getPrenom(),
@@ -51,6 +54,7 @@ class AuthenticationSuccessListener
                 'numeroElecteur' => $user->getNumeroElecteur(),
                 'signature' => $user->getSignature() ? $user->getSignature()->toArray() : null,
                 'demande' => $demandes,
+                'habitant' => $user->isHabitant(),
             ];
         }
 

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -23,77 +24,78 @@ use ApiPlatform\Metadata\Post;
     ],
     order: ["id" => "DESC"],
     paginationEnabled: false,
+    normalizationContext: ['groups' => ['document:read']],
+    denormalizationContext: ['groups' => ['document:write']]
 )]
 
-#[ORM\Table(name: '`gs_mairie_documents_generes`')]
-#[ORM\Index(columns: ['type_document'], flags: ['fulltext'])]
+#[ORM\Table(name: '`gs_mairie_documents`')]
 class DocumentGenere
 {
 
-    const PERMIS_OCCUPATION = 'PERMIS_OCCUPATION';
-    const BAIL_COMMUNAL = 'BAIL_COMMUNAL';
-    const CALCUL_REDEVANCE = 'CALCUL_REDEVANCE';
-
+    const TYPES = [
+        'PERMIS_OCCUPATION',
+        'BAIL_COMMUNAL',
+        'CALCUL_REDEVANCE',
+        'PROPOSITION_BAIL'
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['document:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $typeDocument = null;
+    #[ORM\Column(length: 50)]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $url = null;
+    private ?string $type = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[ORM\Column(type: 'json')]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+
+    private array $contenu = [];
+
+    #[ORM\Column(type: 'datetime')]
+    #[Groups(['document:read'])]
     private ?\DateTimeInterface $dateCreation = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $details = null;
+    #[ORM\OneToOne(mappedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['document:read'])]
+    private ?DemandeTerrain $demandeTerrain = null;
 
 
-    #[ORM\OneToOne(inversedBy: 'documentGenerer', cascade: ['persist', 'remove'])]
-    private ?DemandeTerrain $demande = null;
 
-    #[ORM\OneToOne(mappedBy: 'document', cascade: ['persist', 'remove'])]
-    private ?BailCommunal $bailCommunal = null;
-
-    #[ORM\OneToOne(mappedBy: 'document', cascade: ['persist', 'remove'])]
-    private ?PermisOccupation $permisOccupation = null;
-
-    #[ORM\OneToOne(mappedBy: 'document', cascade: ['persist', 'remove'])]
-    private ?CalculRedevance $calculRedevance = null;
-
-    #[ORM\OneToOne(mappedBy: 'document', cascade: ['persist', 'remove'])]
-    private ?PropositionBail $propositionBail = null;
-
+    public function __construct()
+    {
+        $this->dateCreation = new \DateTime();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getTypeDocument(): ?string
+    public function getType(): ?string
     {
-        return $this->typeDocument;
+        return $this->type;
     }
 
-    public function setTypeDocument(string $typeDocument): static
+    public function setType(string $type): static
     {
-        $this->typeDocument = $typeDocument;
+        $this->type = $type;
 
         return $this;
     }
 
-    public function getUrl(): ?string
+    public function getContenu(): array
     {
-        return $this->url;
+        return $this->contenu;
     }
 
-    public function setUrl(?string $url): static
+    public function setContenu(array $contenu): static
     {
-        $this->url = $url;
+        $this->contenu = $contenu;
 
         return $this;
     }
@@ -110,136 +112,28 @@ class DocumentGenere
         return $this;
     }
 
-    public function getDetails(): ?string
+
+
+
+    public function getDemandeTerrain(): ?DemandeTerrain
     {
-        return $this->details;
+        return $this->demandeTerrain;
     }
 
-    public function setDetails(?string $details): static
+    public function setDemandeTerrain(?DemandeTerrain $demandeTerrain): static
     {
-        $this->details = $details;
-
+        $this->demandeTerrain = $demandeTerrain;
         return $this;
     }
-
-    public function getDemande(): ?DemandeTerrain
-    {
-        return $this->demande;
-    }
-
-    public function setDemande(?DemandeTerrain $demande): static
-    {
-        $this->demande = $demande;
-
-        return $this;
-    }
-
-    public function getBailCommunal(): ?BailCommunal
-    {
-        return $this->bailCommunal;
-    }
-
-    public function setBailCommunal(?BailCommunal $bailCommunal): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($bailCommunal === null && $this->bailCommunal !== null) {
-            $this->bailCommunal->setDocument(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($bailCommunal !== null && $bailCommunal->getDocument() !== $this) {
-            $bailCommunal->setDocument($this);
-        }
-
-        $this->bailCommunal = $bailCommunal;
-
-        return $this;
-    }
-
-    public function getPermisOccupation(): ?PermisOccupation
-    {
-        return $this->permisOccupation;
-    }
-
-    public function setPermisOccupation(?PermisOccupation $permisOccupation): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($permisOccupation === null && $this->permisOccupation !== null) {
-            $this->permisOccupation->setDocument(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($permisOccupation !== null && $permisOccupation->getDocument() !== $this) {
-            $permisOccupation->setDocument($this);
-        }
-
-        $this->permisOccupation = $permisOccupation;
-
-        return $this;
-    }
-
-    public function getCalculRedevance(): ?CalculRedevance
-    {
-        return $this->calculRedevance;
-    }
-
-    public function setCalculRedevance(?CalculRedevance $calculRedevance): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($calculRedevance === null && $this->calculRedevance !== null) {
-            $this->calculRedevance->setDocument(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($calculRedevance !== null && $calculRedevance->getDocument() !== $this) {
-            $calculRedevance->setDocument($this);
-        }
-
-        $this->calculRedevance = $calculRedevance;
-
-        return $this;
-    }
-
-    public function getPropositionBail(): ?PropositionBail
-    {
-        return $this->propositionBail;
-    }
-
-    public function setPropositionBail(?PropositionBail $propositionBail): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($propositionBail === null && $this->propositionBail !== null) {
-            $this->propositionBail->setDocument(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($propositionBail !== null && $propositionBail->getDocument() !== $this) {
-            $propositionBail->setDocument($this);
-        }
-
-        $this->propositionBail = $propositionBail;
-
-        return $this;
-    }
-
-
-
 
 
     public function toArray(): array
     {
         return [
             'id' => $this->id,
-            'typeDocument' => $this->typeDocument,
-            'url' => $this->url,
-            'dateCreation' => $this->dateCreation ? $this->dateCreation->format('Y-m-d H:i:s') : null,
-            'details' => $this->details,
-            'demande' => $this->demande ? $this->demande->toArray() : null,
-            'bailCommunal' => $this->bailCommunal ? $this->bailCommunal->toArray() : null,
-            'permisOccupation' => $this->permisOccupation ? $this->permisOccupation->toArray() : null,
-            'calculRedevance' => $this->calculRedevance ? $this->calculRedevance->toArray() : null,
-            'propositionBail' => $this->propositionBail ? $this->propositionBail->toArray() : null,
-
+            'type' => $this->type,
+            'contenu' => $this->contenu,
+            'dateCreation' => $this->dateCreation ? $this->dateCreation->format('Y-m-d H:i:s') : null
         ];
     }
 }

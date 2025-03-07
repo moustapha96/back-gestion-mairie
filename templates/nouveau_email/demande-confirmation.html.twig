@@ -1,0 +1,99 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Confirmation de votre demande de terrain
+{% endblock %}
+
+{% block header_title %}Confirmation de Demande
+{% endblock %}
+
+{% block content %}
+	<p class="greeting">Bonjour
+		{{ prenom }}
+		{{ nom }},</p>
+
+	<div class="message">
+		<p>Nous avons bien reçu votre demande de terrain. Voici les détails complets :</p>
+
+		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
+			<h3 style="color: #1E81B0; margin-top: 0;">Informations de la demande</h3>
+			<ul style="margin-left: 20px; margin-top: 8px; list-style-type: none; padding: 0;">
+				<li style="margin-bottom: 10px;">
+					<strong>Numéro de la demande :</strong>
+					<span style="color: #154C79;">{{ demande.reference }}</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Type de demande :</strong>
+					<span style="color: #154C79;">{{ demande.typeDemande }}</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Superficie demandée :</strong>
+					<span style="color: #154C79;">{{ demande.superficie }}
+						m²</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Usage prévu :</strong>
+					<span style="color: #154C79;">{{ demande.usagePrevu }}</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Date de soumission :</strong>
+					<span style="color: #154C79;">{{ demande.dateCreation|date('d/m/Y à H:i') }}</span>
+				</li>
+			</ul>
+
+			<h3 style="color: #1E81B0; margin-top: 20px;">Localisation du terrain</h3>
+			<ul style="margin-left: 20px; margin-top: 8px; list-style-type: none; padding: 0;">
+				<li style="margin-bottom: 10px;">
+					<strong>Localité :</strong>
+					<span style="color: #154C79;">{{ localite.nom }}</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Prix estimé :</strong>
+					<span style="color: #154C79;">{{ demande.prix|number_format(0, ',', ' ') }}
+						FCFA</span>
+				</li>
+			</ul>
+
+			<h3 style="color: #1E81B0; margin-top: 20px;">Informations complémentaires</h3>
+			<ul style="margin-left: 20px; margin-top: 8px; list-style-type: none; padding: 0;">
+				<li style="margin-bottom: 10px;">
+					<strong>Possède un autre terrain :</strong>
+					<span style="color: #154C79;">{{ demande.possedeAutreTerrain ? 'Oui' : 'Non' }}</span>
+				</li>
+				<li style="margin-bottom: 10px;">
+					<strong>Type de document fourni :</strong>
+					<span style="color: #154C79;">{{ demande.typeDocument }}</span>
+				</li>
+				{% if demande.description %}
+					<li style="margin-bottom: 10px;">
+						<strong>Description supplémentaire :</strong><br>
+						<span style="color: #154C79;">{{ demande.description }}</span>
+					</li>
+				{% endif %}
+			</ul>
+		</div>
+	</div>
+
+	<div class="message" style="margin-top: 20px;">
+		<h3 style="color: #1E81B0;">Prochaines étapes</h3>
+		<ol style="margin-left: 20px; margin-top: 8px;">
+			<li>Votre demande sera examinée par notre service</li>
+			<li>Un agent vous contactera pour plus d'informations si nécessaire</li>
+			<li>Vous recevrez une notification pour chaque étape du processus</li>
+		</ol>
+	</div>
+
+	<p class="message" style="margin-top: 20px; padding: 15px; background-color: #EEEEE4; border-radius: 4px;">
+		<strong>Important :</strong>
+		Conservez le numéro de votre demande pour tout suivi ultérieur.
+	</p>
+
+	<p class="message" style="margin-top: 20px;">
+		Pour suivre l'état de votre demande, connectez-vous à votre espace personnel sur notre plateforme.
+	</p>
+
+	<p class="message" style="margin-top: 20px;">
+		Merci pour votre confiance.<br>
+		Cordialement,<br>
+		L'équipe de gestion des demandes de terrain
+	</p>
+{% endblock %}

@@ -94,9 +94,11 @@ security:
         - { path: ^/encrypt, roles: PUBLIC_ACCESS }
         - { path: ^/decrypt, roles: PUBLIC_ACCESS }
         - { path: ^/api/logout, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api/demande/nouvelle-demande , roles: PUBLIC_ACCESS }
+        - { path: ^/api/localite/liste-web , roles: PUBLIC_ACCESS }
           
     role_hierarchy:
-        ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+        ROLE_SUPER_ADMIN: ROLE_SUPER_ADMIN
         ROLE_ADMIN: ROLE_ADMIN
         ROLE_AGENT: ROLE_AGENT
         ROLE_DEMANDEUR: ROLE_DEMANDEUR

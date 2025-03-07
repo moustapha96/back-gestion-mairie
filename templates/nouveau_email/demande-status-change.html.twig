@@ -1,0 +1,93 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Mise à jour de votre demande
+{% endblock %}
+
+{% block header_title %}Mise à jour du statut de votre demande
+{% endblock %}
+
+{% block content %}
+	<p class="greeting">Bonjour
+		{{ prenom }}
+		{{ nom }},</p>
+
+	<p>Nous vous informons que le statut de votre demande a été mis à jour.</p>
+
+	<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
+		<h3 style="color: #1E81B0; margin-top: 0;">Informations de la demande</h3>
+		<ul style="margin-left: 20px; margin-top: 8px; list-style-type: none; padding: 0;">
+			<li style="margin-bottom: 10px;">
+				<strong>Type de demande :</strong>
+				<span style="color: #154C79;">{{ demande.typeDemande }}</span>
+			</li>
+			<li style="margin-bottom: 10px;">
+				<strong>Superficie :</strong>
+				<span style="color: #154C79;">{{ demande.superficie }}
+					m²</span>
+			</li>
+			<li style="margin-bottom: 10px;">
+				<strong>Localité :</strong>
+				<span style="color: #154C79;">{{ demande.localite.nom }}</span>
+			</li>
+			<li style="margin-bottom: 10px;">
+				<strong>Date de création :</strong>
+				<span style="color: #154C79;">{{ demande.dateCreation|date('d/m/Y') }}</span>
+			</li>
+		</ul>
+
+		<div style="margin-top: 20px; padding: 15px; background-color: white; border-radius: 4px;">
+			<h4 style="color: #1E81B0; margin-top: 0;">Nouveau statut de votre demande :</h4>
+			<p style="margin: 10px 0; font-size: 18px;">
+				{% if statut == 'EN_COURS' %}
+					<span style="color: #E28743;">En cours de traitement</span>
+				{% elseif statut == 'EN_TRAITEMENT' %}
+					<span style="color: #1E81B0;">En traitement</span>
+				{% elseif statut == 'VALIDE' %}
+					<span style="color: #2E7D32;">Validée</span>
+				{% elseif statut == 'REJETE' %}
+					<span style="color: #C62828;">Rejetée</span>
+				{% endif %}
+			</p>
+			<p style="margin-top: 15px;">
+				<strong>Date de mise à jour :</strong>
+				{{ "now"|date('d/m/Y à H:i') }}
+			</p>
+		</div>
+	</div>
+
+	{% if statut == 'VALIDE' %}
+		<div style="background-color: #E8F5E9; padding: 15px; border: 1px solid #81C784; border-radius: 4px; margin: 15px 0;">
+			<p style="color: #2E7D32; margin: 0;">
+				<strong>Félicitations !</strong>
+				Votre demande a été validée. Nous vous contacterons prochainement pour la suite des démarches.
+			</p>
+		</div>
+	{% elseif statut == 'REJETE' %}
+		<div style="background-color: #FFEBEE; padding: 15px; border: 1px solid #E57373; border-radius: 4px; margin: 15px 0;">
+			<p style="color: #C62828; margin: 0;">
+				<strong>Nous sommes désolés.</strong>
+				Votre demande n'a pas pu être acceptée. Pour plus d'informations, veuillez nous contacter.
+			</p>
+		</div>
+	{% elseif statut == 'EN_TRAITEMENT' %}
+		<div style="background-color: #E3F2FD; padding: 15px; border: 1px solid #64B5F6; border-radius: 4px; margin: 15px 0;">
+			<p style="color: #1565C0; margin: 0;">
+				Votre demande est en cours d'examen par nos services. Nous vous tiendrons informé de son avancement.
+			</p>
+		</div>
+	{% endif %}
+
+	<div style="margin-top: 20px;">
+		<p>Pour suivre l'évolution de votre demande, vous pouvez vous connecter à votre espace personnel sur notre plateforme.</p>
+
+		<p style="background-color: #EEEEE4; padding: 15px; border-radius: 4px; margin-top: 15px;">
+			<strong>Important :</strong>
+			En cas de questions ou pour toute information complémentaire, n'hésitez pas à nous contacter.
+		</p>
+	</div>
+
+	<p style="margin-top: 30px;">
+		Cordialement,<br>
+		<strong>Le service de gestion des demandes de terrain</strong>
+	</p>
+{% endblock %}

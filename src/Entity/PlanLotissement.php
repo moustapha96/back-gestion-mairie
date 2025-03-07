@@ -42,7 +42,7 @@ class PlanLotissement
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateCreation = null;
 
-    #[ORM\ManyToOne(inversedBy: 'planLotissements')]
+    #[ORM\ManyToOne(inversedBy: 'planLotissements', fetch: 'EAGER')]
     private ?Lotissement $lotissement = null;
 
     public function getId(): ?int

@@ -1,0 +1,16 @@
+{% extends 'base/base-mail.html.twig' %}
+
+
+{% block header_title %}Nouvelle demande reçue
+{% endblock %}
+
+{% block content %}
+	<p>Bonjour,</p>
+	<p>Votre demande pour
+		<strong>{{ request.type }}</strong>
+		a été enregistrée avec succès.</p>
+	<p>Référence de la demande :
+		<strong>{{ request.reference }}</strong>
+	</p>
+	<p>Nous vous tiendrons informé(e) des mises à jour.</p>
+{% endblock %}

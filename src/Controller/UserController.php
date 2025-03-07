@@ -29,12 +29,15 @@ class UserController extends AbstractController
         $this->mailService = $mailService;
     }
 
-    #[Route('/api/users/create', name: 'api_users_creation', methods: ['POST'])]
+    #[Route('/api/user/create', name: 'api_users_creation', methods: ['POST'])]
     public function createUser(
         Request $request,
         ValidatorInterface $validator,
         UserRepository $userRepository,
     ): Response {
+
+
+
         $data = json_decode($request->getContent(), true);
 
         $user = new User();
@@ -47,7 +50,7 @@ class UserController extends AbstractController
 
         $user->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
         $user->setTokenActiveted(bin2hex(random_bytes(32)));
-        $user->setNumeroElecteur($data["numeroElecteur"] ?? null);
+        // $user->setNumeroElecteur(null);
         $user->setDateNaissance(isset($data["dateNaissance"]) ? new \DateTime($data["dateNaissance"]) : null);
         $user->setLieuNaissance($data["lieuNaissance"] ?? null);
         $user->setTelephone($data["telephone"] ?? null);
@@ -67,7 +70,7 @@ class UserController extends AbstractController
         }
 
         $userRepository->save($user, true);
-
+        $this->mailService->sendWelcomeMail($user->getEmail(), $user->getTokenActiveted());
         return new Response(json_encode($user->toArray()), Response::HTTP_CREATED, ['Content-Type' => 'application/json']);
     }
 
@@ -100,7 +103,7 @@ class UserController extends AbstractController
     }
 
     // une fonctio pour permettre à l'utilisateur de modifier ces informations
-    #[Route('/api/users/mise-a-jour-compte/{id}', name: 'api_users_mise_a_jour_compte', methods: ['PUT'])]
+    #[Route('/api/user/update-profile/{id}', name: 'api_users_mise_a_jour_compte', methods: ['PUT'])]
     public function modifierCompte(
         Request $request,
         int $id,
@@ -114,7 +117,6 @@ class UserController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-
         // Récupération des champs avec des valeurs par défaut
         $email = $data['email'] ?? $user->getEmail();
         $password = $data['password'] ?? null;
@@ -127,7 +129,9 @@ class UserController extends AbstractController
         $lieuNaissance = $data['lieuNaissance'] ?? $user->getLieuNaissance();
         $numeroElecteur = $data['numeroElecteur'] ?? $user->getNumeroElecteur();
 
-
+        if ($email) {
+            $user->setUsername($email);
+        }
 
         // Mise à jour du mot de passe s'il y a un nouveau
         if ($newPassword && $password) {
@@ -160,22 +164,21 @@ class UserController extends AbstractController
         }
         $userRepository->save($user, true);
 
-        return new Response(json_encode(['message' => 'Utilisateur mis à jour avec succès']), Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        return new Response(json_encode($user->toArray()), Response::HTTP_OK, ['Content-Type' => 'application/json']);
     }
 
 
     // create user with admin role
-    #[Route('/api/users/create-admin', name: 'api_users_create_admin', methods: ['POST'])]
+    #[Route('/api/user/create-admin', name: 'api_users_create_admin', methods: ['POST'])]
     public function createUserAdmin(
         Request $request,
         ValidatorInterface $validator,
         UserRepository $userRepository,
-        MailService $mailService
     ): Response {
         $data = json_decode($request->getContent(), true);
         $user = new User();
 
-        if (!isset($data['email'], $data['username'])) {
+        if (!isset($data['email'])) {
             return $this->json([
                 'status' => 'error',
                 'message' => 'Les champs email et username sont obligatoires.'
@@ -193,18 +196,22 @@ class UserController extends AbstractController
         $user->setEmail($data['email']);
         $user->setPrenom($data['prenom']);
         $user->setAdresse($data['adresse']);
-        $user->setUsername($data['username']);
+        $user->setUsername($data['email']);
+        // profession   
+        $user->setProfession($data['profession']);
         $user->setTelephone($data['telephone']);
         $user->setLieuNaissance($data['lieuNaissance']);
         $user->setDateNaissance(new \DateTime($data['dateNaissance']));
+        $user->setNumeroElecteur($data['numeroElecteur'] ?? null);
         $user->setActiveted(false);
         $user->setEnabled(false);
-
+        $user->setTokenActiveted(bin2hex(random_bytes(32)));
 
         $passwordGenere = $user->generatePassword(8);
         $user->setPassword(password_hash($passwordGenere, PASSWORD_BCRYPT));
         $user->setPasswordClaire($passwordGenere);
 
+        // dd($user);
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
             return $this->json([
@@ -213,8 +220,8 @@ class UserController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $mailService->sendWelcomeMail($user, $user->getTokenActiveted());
         $userRepository->save($user, true);
+        $resultat = $this->mailService->sendAccountCreationMail($user, $passwordGenere);
 
         return $this->json(
             [
@@ -231,6 +238,7 @@ class UserController extends AbstractController
                     'prenom' => $user->getPrenom(),
                     'dateNaissance' => $user->getDateNaissance(),
                     'lieuNaissance' => $user->getLieuNaissance(),
+                    'numeroElecteur' => $user->getNumeroElecteur()
                 ]
             ],
             Response::HTTP_CREATED
@@ -264,21 +272,16 @@ class UserController extends AbstractController
     }
 
     // update status user
-    #[Route('/api/users/update-activated-status/{id}', name: 'api_users_update_status', methods: ['PUT'])]
+    #[Route('/api/user/update-activated-status/{id}', name: 'api_users_update_status', methods: ['PUT'])]
     public function updateStatus($id, Request $request,  UserRepository $userRepository): Response
     {
-        $isActived = json_decode($request->getContent(), true)['isActive'];
+        $isActive = json_decode($request->getContent(), true)['isActive'];
         $user = $userRepository->find($id);
         if ($user) {
-            if ($isActived == "desactive") {
-                $user->setActiveted(false);
-                $user->setEnabled(false);
-            } else {
-                $user->setActiveted(true);
-                $user->setEnabled(true);
-            }
-
+            $user->setActiveted(boolval($isActive));
             $userRepository->save($user, true);
+
+            $this->mailService->sendAccountStatusChangeEmail($user->getEmail(),  $isActive, $user);
             return $this->json('Utilisateur mis à jour', Response::HTTP_OK);
         }
         return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
@@ -310,10 +313,15 @@ class UserController extends AbstractController
         return $this->json($data, Response::HTTP_OK);
     }
 
-    #[Route('/api/users/upload-profile-picture/{userId}', name: 'api_users_upload_profile_picture', methods: ['POST'])]
-    public function uploadProfilePicture($userId, Request $request, UserRepository $userRepository): Response
+
+    #[Route('/api/user/upload-profile-picture', name: 'api_user_upload_profile_picture', methods: ['POST'])]
+    public function uploadProfilePicture(Request $request, UserRepository $userRepository): Response
     {
+        $userId = $request->request->get('userId');
         $user = $userRepository->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+        }
         $file = $request->files->get('image');
 
         if (!$file) {
@@ -335,15 +343,13 @@ class UserController extends AbstractController
             $userRepository->save($user, true);
 
             return $this->json([
-                'success' => true,
                 'message' => 'Profil mis à jour',
-                'imageUrl' => $user->getAvatar(),
+                'avatar' => $user->getAvatar(),
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
-            return $this->json(['error' => 'Erreur lors du téléchargement de l\'image'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->json(['error' => 'Erreur lors du téléchargement de l\'image: ' . $e->getMessage()], Response::HTTP_NO_CONTENT);
         }
     }
-
 
     #[Route('/api/users/set-compte-enable/{id}', name: 'api_user_set_compte_enable', methods: ['PUT'])]
     public function updateCompteEnable($id, Request $request,  UserRepository $userRepository): Response
@@ -371,12 +377,142 @@ class UserController extends AbstractController
 
 
     // methode de reccuperation des données d'un utilisateur
-    #[Route('/api/users/{id}/details', name: 'api_user_show', methods: ['GET'])]
+    #[Route('/api/user/{id}/details', name: 'api_user_show', methods: ['GET'])]
     public function details($id, UserRepository $userRepository): Response
     {
         $user = $userRepository->find($id);
         if (!$user)
             return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
-        return $this->json($user, Response::HTTP_OK);
+        $resultat = [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'nom' => $user->getNom(),
+            'activated' => $user->isActiveted(),
+            'prenom' => $user->getPrenom(),
+            'dateNaissance' => $user->getDateNaissance(),
+            'lieuNaissance' => $user->getLieuNaissance(),
+            'numeroElecteur' => $user->getNumeroElecteur(),
+            'telephone' => $user->getTelephone(),
+            'adresse' => $user->getAdresse(),
+            'avatar' => $user->getAvatar(),
+            'demandes' => $user->getDemandes(),
+            'enabled' => $user->isEnabled(),
+        ];
+        return $this->json($resultat, Response::HTTP_OK);
+    }
+
+
+    // la liste des user sauf admin
+    #[Route('/api/user/liste', name: 'api_user_list', methods: ['GET'])]
+    public function list(UserRepository $userRepository): Response
+    {
+        $users = $userRepository->findAll();
+        $resultat = [];
+        foreach ($users as $user) {
+            $resultat[] = [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'nom' => $user->getNom(),
+                'roles' => $user->getRoles(),
+                'prenom' => $user->getPrenom(),
+                'dateNaissance' => $user->getDateNaissance(),
+                'lieuNaissance' => $user->getLieuNaissance(),
+                'numeroElecteur' => $user->getNumeroElecteur(),
+                'telephone' => $user->getTelephone(),
+                'adresse' => $user->getAdresse(),
+                'avatar' => $user->getAvatar(),
+                'enabled' => $user->isEnabled(),
+                'activated' => $user->isActiveted(),
+                'demandes' => $user->getDemandes(),
+            ];
+        }
+
+        return $this->json($resultat, Response::HTTP_OK);
+    }
+
+    // updatePassword
+    #[Route('/api/user/{id}/update-password', name: 'api_user_update_password', methods: ['PUT'])]
+    public function updatePassword($id, Request $request,  UserRepository $userRepository): Response
+    {
+        $user = $userRepository->find($id);
+        if (!$user)
+            return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
+        $data = json_decode($request->getContent(), true);
+
+        if ($data['currentPassword'] == $data['newPassword']) {
+            return $this->json(['message' => 'Le nouveau mot de passe doit différer du mot de passe actuel'], Response::HTTP_BAD_REQUEST);
+        }
+        if (!password_verify($data['currentPassword'], $user->getPassword())) {
+            return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
+        }
+        $currentPassword = password_hash($data['currentPassword'], PASSWORD_BCRYPT);
+
+        if ($user->getPassword() != $currentPassword) {
+            return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $newPassword = password_hash($data['newPassword'], PASSWORD_BCRYPT);
+        $user->setPassword($newPassword);
+        $userRepository->save($user, true);
+        return $this->json(['message' => 'Mot de passe mis à jour avec success'], Response::HTTP_OK);
+    }
+
+
+    // se connecter sur une base de données et reccuperer les users dans la table users qui ont le meme numeroElecteur
+
+    #[Route('/api/user/check-numero-electeur/{email}', name: 'api_check_numero_electeur', methods: ['GET'])]
+    public function checkNumeroElecteur(string $email): Response
+    {
+        try {
+            // Connexion à la base de données
+            $pdo = new \PDO(
+                'mysql:host=localhost:3306;dbname=adn_db_actif',
+                'root',
+                '',
+                array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION)
+            );
+
+            // Préparation de la requête
+            $query = "SELECT * FROM adn_users WHERE email = :email";
+            $stmt = $pdo->prepare($query);
+            $stmt->execute(['email' => $email]);
+
+            // Récupération des résultats
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($results)) {
+                return $this->json([
+                    'message' => 'Aucun utilisateur trouvé avec ce numéro d\'électeur',
+                    'found' => false
+                ], Response::HTTP_OK);
+            }
+
+            return $this->json([
+                'message' => 'Utilisateurs trouvés',
+                'found' => true,
+                'users' => $results
+            ], Response::HTTP_OK);
+        } catch (\PDOException $e) {
+            return $this->json([
+                'message' => 'Erreur de connexion à la base de données',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    // methode pour mettre a jour le role
+    #[Route('/api/user/{id}/update-role', name: 'api_user_update_role', methods: ['PUT'])]
+    public function updateRole($id, Request $request, UserRepository $userRepository): Response
+    {
+        $user = $userRepository->find($id);
+        if (!$user)
+            return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
+        $data = json_decode($request->getContent(), true);
+
+        $user->setRoles($data['role']);
+        $this->mailService->sendEmailChangeRole($user->getEmail(), $data['role'], $user);
+        $userRepository->save($user, true);
+        return $this->json(['message' => 'Role mis à jour avec success'], Response::HTTP_OK);
     }
 }

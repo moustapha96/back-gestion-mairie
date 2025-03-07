@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>
+			{% block title %}Gestion de la Mairie - Notification
+			{% endblock %}
+		</title>
+		<style>:root
+		{
+			--primary-color: #e28743;
+			--secondary-color: #eab676;
+			--background-color: #eeeee4;
+			--text-color: #1D1D1D;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			background-color: var(--background-color);
+			color: var(--text-color);
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 600px;
+			margin: auto;
+			background: white;
+			padding: 20px;
+			border-radius: 12px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		.header {
+			text-align: center;
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			color: white;
+			padding: 20px 0;
+		}
+
+		.logo {
+			width: 120px;
+			height: auto;
+			margin-bottom: 16px;
+		}
+
+		.content {
+			padding: 32px 24px;
+		}
+
+		.button {
+			display: inline-block;
+			background-color: var(--primary-color);
+			color: white;
+			padding: 14px 32px;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			transition: background-color 0.3s ease;
+		}
+
+		.button:hover {
+			background-color: var(--secondary-color);
+		}
+
+		.footer {
+			text-align: center;
+			font-size: 14px;
+			color: var(--text-color);
+			margin-top: 20px;
+			padding: 20px;
+			border-top: 1px solid #dcdcdc;
+		}
+
+		.footer p {
+			color: var(--text-color);
+		}
+
+		@media(max-width: 600px) {
+			.container {
+				margin: 0 10px;
+				padding: 10px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<img src="/public/logo/logo_mairie.png" alt="Logo Mairie" class="logo">
+			<h1>
+				{% block header_title %}{% endblock %}
+			</h1>
+		</div>
+		<div class="content"> {% block content %}{% endblock %}
+			</div>
+			<div class="footer">
+				<p>Cordialement,<br>L'équipe de la Mairie</p>
+				<p>
+					<small>©
+						{{ "now"|date('Y') }}
+						Mairie - Tous droits réservés</small>
+				</p>
+				<p>
+					<small>Pour toute assistance, contactez notre support :
+						{{ get_telephone() }}
+					</small>
+
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

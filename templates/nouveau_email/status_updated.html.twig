@@ -1,0 +1,16 @@
+{% extends 'base/base-mail.html.twig' %}
+
+
+{% block header_title %}Mise à jour du statut
+{% endblock %}
+
+{% block content %}
+	<p>Bonjour,</p>
+	<p>Le statut de votre demande
+		<strong>{{ request.reference }}</strong>
+		a changé :</p>
+	<p>
+		<strong>Nouveau statut :</strong>
+		{{ status }}</p>
+	<p>Nous vous remercions pour votre patience.</p>
+{% endblock %}

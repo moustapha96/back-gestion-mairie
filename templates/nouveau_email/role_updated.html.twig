@@ -1,0 +1,70 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Mise à jour de votre rôle
+{% endblock %}
+
+{% block header_title %}Nouveau rôle attribué
+{% endblock %}
+
+{% block content %}
+	<p class="greeting">Bonjour
+		{{ user.prenom }}
+		{{ user.nom }},</p>
+
+	<div class="message">
+		<p>Nous vous informons que votre rôle sur la plateforme de la Mairie a été mis à jour.</p>
+
+		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
+			<h3 style="color: #1E81B0; margin-top: 0;">Nouveau rôle attribué</h3>
+			<p style="font-size: 18px; color: #154C79; margin: 15px 0;">
+				{% if role == 'ROLE_ADMIN' %}
+					<strong>Administrateur</strong>
+				{% elseif role == 'ROLE_AGENT' %}
+					<strong>Agent</strong>
+				{% else %}
+					<strong>Demandeur</strong>
+				{% endif %}
+			</p>
+
+			<h4 style="color: #1E81B0; margin-top: 20px;">Vos nouvelles fonctionnalités :</h4>
+			<ul style="margin-left: 20px;">
+				{% if role == 'ROLE_ADMIN' %}
+					<li>Gestion complète des demandes de terrain</li>
+					<li>Administration des utilisateurs</li>
+					<li>Gestion des paramètres du système</li>
+					<li>Suivi des statistiques et rapports</li>
+					<li>Validation des demandes</li>
+				{% elseif role == 'ROLE_AGENT' %}
+					<li>Traitement des demandes de terrain</li>
+					<li>Gestion des dossiers</li>
+					<li>Suivi des demandeurs</li>
+					<li>Communication avec les utilisateurs</li>
+				{% else %}
+					<li>Dépôt de demandes de terrain</li>
+					<li>Suivi de vos demandes en cours</li>
+					<li>Accès à vos documents</li>
+					<li>Mise à jour de votre profil</li>
+				{% endif %}
+			</ul>
+		</div>
+
+		<div style="margin-top: 20px; padding: 15px; background-color: #E3F2FD; border: 1px solid #64B5F6; border-radius: 4px;">
+			<p style="margin: 0;">
+				<strong>Action requise :</strong>
+				Pour des raisons de sécurité, veuillez vous déconnecter et vous reconnecter 
+												                pour que les changements prennent effet.
+			</p>
+		</div>
+
+
+		<div style="margin-top: 25px; padding: 15px; background-color: #FFF3E0; border: 1px solid #FFB74D; border-radius: 4px;">
+			<p style="color: #E65100; margin: 0;">
+				<strong>Important :</strong>
+				Si vous n'avez pas demandé ce changement de rôle ou si vous avez des questions, 
+												                veuillez contacter immédiatement l'administrateur de la plateforme.
+			</p>
+		</div>
+	</div>
+
+
+{% endblock %}

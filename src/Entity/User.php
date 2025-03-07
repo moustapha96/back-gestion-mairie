@@ -25,11 +25,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['numeroElecteur'], message: "Numero Electeur est déjà utilisé par un autre utilisateur")]
 
 #[ApiResource(
-    operations: [
-        new Get(normalizationContext: ['groups' => ['user:item']]),
-        new Post(normalizationContext: ['groups' => ['user:write']]),
-        new GetCollection(normalizationContext: ['groups' => ['user:list']]),
-    ],
+    normalizationContext: ['groups' => ['user:item', 'user:list']],
+    denormalizationContext: ['groups' => ['user:write']],
     order: ["id" => "DESC"],
     paginationEnabled: false,
 )]
@@ -43,18 +40,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const ROLE_DEMANDEUR = 'ROLE_DEMANDEUR';
     const ROLE_ADMIN = "ROLE_ADMIN";
 
+    const ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
+
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
     private ?int $id = null;
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
     #[ORM\Column(length: 180, unique: true)]
     private ?string $username = null;
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
     #[ORM\Column]
     private array $roles = [];
 
@@ -118,7 +117,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, nullable: true)]
     #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
     private ?string $numeroElecteur = null;
 
@@ -133,6 +132,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     #[Groups(['user:item'])]
     private ?Signature $signature = null;
+
+
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $habitant = null;
 
     public function __construct()
     {
@@ -208,18 +212,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if (!in_array($roles, [
             self::ROLE_AGENT,
             self::ROLE_DEMANDEUR,
-            self::ROLE_ADMIN
+            self::ROLE_ADMIN,
+            self::ROLE_SUPER_ADMIN
         ])) {
             throw new \InvalidArgumentException("Invalid role: " . $roles);
         }
-        $this->roles = [$roles]; // Assigner le rôle unique
+        $this->roles = [$roles];
 
         return $this;
     }
 
     public function addRole(string $role): static
     {
-        if (!in_array($role, [self::ROLE_AGENT, self::ROLE_DEMANDEUR, self::ROLE_ADMIN])) {
+        if (!in_array($role, [self::ROLE_AGENT, self::ROLE_DEMANDEUR, self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN])) {
             throw new \InvalidArgumentException("Invalid role: " . $role);
         }
         if (!in_array($role, $this->roles)) {
@@ -548,8 +553,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             'dateNaissance' => $this->getDateNaissance(),
             'lieuNaissance' => $this->getLieuNaissance(),
             'adresse' => $this->getAdresse(),
-            'numeroElecteur' => $this->getNumeroElecteur(),
+            'numeroElecteur' => $this->getNumeroElecteur() ?? null,
             'profession' => $this->getProfession(),
         ];
+    }
+
+
+
+    public function isHabitant(): ?bool
+    {
+        return $this->habitant;
+    }
+
+    public function setHabitant(?bool $habitant): static
+    {
+        $this->habitant = $habitant;
+
+        return $this;
     }
 }

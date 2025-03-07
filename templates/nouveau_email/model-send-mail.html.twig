@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{ sujet }}</title>
+		<style>
+			@media screen and(max-width: 600px) {
+				.container {
+					width: 100% !important;
+				}
+				.button {
+					width: 100% !important;
+				}
+			}
+		</style>
+	</head>
+	<body style="margin: 0; padding: 0; background-color: #EEEEE4; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #21130D;">
+		<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+			<tr>
+				<td style="padding: 20px 0;">
+					<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;" class="container">
+						<tr>
+							<td style="background: linear-gradient(135deg, #1E81B0, #063970); padding: 32px 20px; text-align: center;">
+								<img src="{{ absolute_url('/public/logo/logo_mairie.png') }}" alt="Logo Mairie" style="max-width: 150px; height: auto; margin-bottom: 20px;">
+								<h1 style="color: #EEEEE4; margin: 0;">{{ get_titre() }}</h1>
+								<p style="color: #ABDBE3; margin: 10px 0 0 0;">{{ sujet }}</p>
+							</td>
+						</tr>
+						<tr>
+							<td style="padding: 32px 24px; font-family: Arial, Helvetica, sans-serif;">
+								<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; background-color: #EEEEE4; border-radius: 5px; padding: 16px; border: 1px solid #76B5C5;">
+									<tr>
+										<td>
+											{{ message|raw }}
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<tr>
+							<td style="padding: 20px; background-color: #EEEEE4; border-top: 1px solid #76B5C5; text-align: center;">
+								<p style="margin: 0; font-size: 14px; color: #154C79;">
+									{{ get_titre() }}<br>
+									{{ get_adresse() }}<br>
+									Tél :
+									{{ get_telephone() }}<br>
+									<a href="mailto:{{ get_email() }}" style="color: #1E81B0; text-decoration: none;">{{ get_email() }}</a><br>
+									<a href="{{ get_site_web() }}" style="color: #1E81B0; text-decoration: none;">{{ get_site_web() }}</a>
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

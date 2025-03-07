@@ -1,0 +1,19 @@
+{% extends 'base/base-mail.html.twig' %}
+
+
+{% block header_title %}Document généré
+{% endblock %}
+
+{% block content %}
+	<p>Bonjour,</p>
+	<p>Votre document
+		<strong>{{ document.name }}</strong>
+		a été généré avec succès.</p>
+	<p>Numéro de référence :
+		<strong>{{ document.reference }}</strong>
+	</p>
+	<p>Vous pouvez le télécharger en cliquant sur le bouton ci-dessous :</p>
+	<p>
+		<a href="{{ document.download_link }}" class="button">Télécharger</a>
+	</p>
+{% endblock %}

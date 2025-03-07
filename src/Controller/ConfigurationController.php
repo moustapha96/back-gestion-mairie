@@ -14,64 +14,62 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ConfigurationController extends AbstractController
 {
-    #[Route('/api/configurations/liste', name: 'api_get_configurations_liste', methods: ['GET'])]
-    public function getConfigurations(ConfigurationRepository $repository): JsonResponse
+
+    private function initDefaultConfigurations(EntityManagerInterface $em): void
     {
-        $configurations = $repository->findAll();
-        $resultat = [];
-        for ($i = 0; $i < count($configurations); $i++) {
-            if ($configurations[$i]->getCle() == "title_1") {
+        $defaultConfigs = [
+            'titre' => '',
+            'adresse' => '',
+            'telephone' => '',
+            'siteWeb' => '',
+            'email' => '',
+            'nomMaire' => ''
+        ];
 
-                $resultat[] = [
-                    'title_1' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "title_2") {
-
-                $resultat[] = [
-                    'title_2' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "email") {
-
-                $resultat[] = [
-                    'email' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "name") {
-
-                $resultat[] = [
-                    'name' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "tel") {
-
-                $resultat[] = [
-                    'tel' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "linkedin") {
-
-                $resultat[] = [
-                    'linkedin' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "twitter") {
-
-                $resultat[] = [
-                    'twitter' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "instagram") {
-
-                $resultat[] = [
-                    'instagram' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "prixDemandeur") {
-
-                $resultat[] = [
-                    'prixDemandeur' => $configurations[$i]->getValeur(),
-                ];
-            } elseif ($configurations[$i]->getCle() == "prixInstitut") {
-
-                $resultat[] = [
-                    'prixInstitut' => $configurations[$i]->getValeur(),
-                ];
+        foreach ($defaultConfigs as $cle => $valeur) {
+            $configuration = $em->getRepository(Configuration::class)->findOneBy(['cle' => $cle]);
+            if (!$configuration) {
+                $configuration = new Configuration();
+                $configuration->setCle($cle);
+                $configuration->setValeur($valeur);
+                $em->persist($configuration);
             }
         }
+        $em->flush();
+    }
+
+    #[Route('/api/configurations/liste', name: 'api_get_configurations_liste', methods: ['GET'])]
+    public function getConfigurations(ConfigurationRepository $repository, EntityManagerInterface $em): JsonResponse
+    {
+        // Initialiser les configurations par défaut si elles n'existent pas
+        $this->initDefaultConfigurations($em);
+
+        $configurations = $repository->findAll();
+        $resultat = [];
+
+        foreach ($configurations as $config) {
+            switch ($config->getCle()) {
+                case 'titre':
+                    $resultat['titre'] = $config->getValeur();
+                    break;
+                case 'adresse':
+                    $resultat['adresse'] = $config->getValeur();
+                    break;
+                case 'telephone':
+                    $resultat['telephone'] = $config->getValeur();
+                    break;
+                case 'siteWeb':
+                    $resultat['siteWeb'] = $config->getValeur();
+                    break;
+                case 'email':
+                    $resultat['email'] = $config->getValeur();
+                    break;
+                case 'nomMaire':
+                    $resultat['nomMaire'] = $config->getValeur();
+                    break;
+            }
+        }
+
         return $this->json($resultat, 200);
     }
 
@@ -81,46 +79,24 @@ class ConfigurationController extends AbstractController
         $data = $configurationRepository->findAll();
         $datas = [];
         foreach ($data as $key => $value) {
-            if ($value->getCle() == "name") {
-                $datas['name'] = $value->getValeur();
+            if ($value->getCle() == "titre") {
+                $datas['titre'] = $value->getValeur();
             } elseif ($value->getCle() == "email") {
                 $datas['email'] = $value->getValeur();
-            } elseif ($value->getCle() == "tel") {
-                $datas['tel'] = $value->getValeur();
-            } elseif ($value->getCle() == "linkedin") {
-                $datas['linkedin'] = $value->getValeur();
-            } elseif ($value->getCle() == "twitter") {
-                $datas['twitter'] = $value->getValeur();
-            } elseif ($value->getCle() == "instagram") {
-                $datas['instagram'] = $value->getValeur();
+            } elseif ($value->getCle() == "telephone") {
+                $datas['telephone'] = $value->getValeur();
+            } elseif ($value->getCle() == "adresse") {
+                $datas['adresse'] = $value->getValeur();
+            } elseif ($value->getCle() == "siteWeb") {
+                $datas['siteWeb'] = $value->getValeur();
+            } elseif ($value->getCle() == "nomMaire") {
+                $datas['nomMaire'] = $value->getValeur();
             }
         }
         return  new JsonResponse($datas, 200, []);
     }
 
 
-
-    // #[Route('/api/configurations/update/{cle}', name: 'update_configuration', methods: ['POST'])]
-    // public function updateConfiguration($cle, Request $request, ConfigurationRepository $confRepo, EntityManagerInterface $em): JsonResponse
-    // {
-
-    //     $data = $request->request->all();
-    //     foreach ($data as $key => $value) {
-    //         $a_modifier = $confRepo->findOneBy(['cle' => $key]);
-    //         if ($a_modifier) {
-    //             $a_modifier->setValeur($value);
-    //             $em->persist($a_modifier);
-    //         } else {
-    //             return $this->json(['error' => "Configuration not found for key: $key"], 404);
-    //         }
-    //     }
-
-    //     // Enregistrez les modifications
-    //     $em->flush();
-
-    //     // Retourner la configuration mise à jour
-    //     return $this->json('success', 200, [], ['groups' => 'read']);
-    // }
 
 
     #[Route('/api/configurations/update-logo', name: 'logo_update_configuration', methods: ['POST'])]
@@ -155,22 +131,30 @@ class ConfigurationController extends AbstractController
     }
 
 
-    #[Route('/api/configurations/update', name: 'update_configuration', methods: ['POST'])]
+    #[Route('/api/configurations/update', name: 'update_configuration', methods: ['PUT'])]
     public function updateConfiguration(Request $request, ConfigurationRepository $confRepo, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        foreach ($data as $key => $value) {
-            $a_modifier = $confRepo->findOneBy(['cle' => $key]);
-            if ($a_modifier) {
-                $a_modifier->setValeur($value);
-                $em->persist($a_modifier);
-            } else {
-                return $this->json(['error' => "Configuration not found for key: $key"], 404);
-            }
+
+        if (!isset($data['cle']) || !isset($data['valeur'])) {
+            return $this->json(['error' => 'Les champs cle et valeur sont requis'], 400);
         }
 
+        $configuration = $confRepo->findOneBy(['cle' => $data['cle']]);
+
+        if (!$configuration) {
+            // Création d'une nouvelle configuration si elle n'existe pas
+            $configuration = new Configuration();
+            $configuration->setCle($data['cle']);
+        }
+
+        $configuration->setValeur($data['valeur']);
+        $em->persist($configuration);
         $em->flush();
 
-        return $this->json('success', 200, [], ['groups' => 'read']);
+        return $this->json([
+            'message' => 'Configuration updated successfully',
+            'isNewConfiguration' => $configuration->getId() === null
+        ], 200);
     }
 }

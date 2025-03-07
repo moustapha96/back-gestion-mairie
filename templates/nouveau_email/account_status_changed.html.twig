@@ -1,0 +1,72 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Mise à jour du statut de votre compte
+{% endblock %}
+
+{% block header_title %}Statut de votre compte
+{% endblock %}
+
+{% block content %}
+	<div class="message">
+		<p class="greeting">Bonjour
+			{{ user.prenom }}
+			{{ user.nom }},</p>
+
+		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
+			<h3 style="color: #1E81B0; margin-top: 0;">Information importante</h3>
+
+			{% if status == 'activé' %}
+				<div style="background-color: #E8F5E9; padding: 15px; border: 1px solid #81C784; border-radius: 4px; margin: 15px 0;">
+					<p style="color: #2E7D32; margin: 0;">
+						<strong>Votre compte a été activé avec succès !</strong>
+					</p>
+				</div>
+				<p>Vous pouvez désormais accéder à votre espace personnel et profiter des services suivants :</p>
+				<ul style="margin-left: 20px; margin-top: 8px;">
+					<li>Faire des demandes de terrain</li>
+					<li>Suivre l'état de vos demandes</li>
+					<li>Accéder à vos documents</li>
+					<li>Gérer votre profil</li>
+				</ul>
+			{% else %}
+				<div style="background-color: #FFEBEE; padding: 15px; border: 1px solid #E57373; border-radius: 4px; margin: 15px 0;">
+					<p style="color: #C62828; margin: 0;">
+						<strong>Votre compte a été temporairement désactivé.</strong>
+					</p>
+				</div>
+				<p>Pour plus d'informations sur les raisons de cette désactivation ou pour réactiver votre compte, veuillez :</p>
+				<ul style="margin-left: 20px; margin-top: 8px;">
+					<li>Contacter notre service support</li>
+					<li>Fournir votre numéro d'électeur :
+						{{ user.numeroElecteur }}</li>
+					<li>Préparer une pièce d'identité valide</li>
+				</ul>
+			{% endif %}
+		</div>
+
+		<div style="background-color: #EEEEE4; padding: 15px; border-radius: 4px; margin-top: 20px;">
+			<p style="margin: 0;">
+				<strong>Rappel de vos informations :</strong>
+			</p>
+			<ul style="list-style: none; padding: 0; margin: 10px 0;">
+
+				<li>
+					<strong>Email :</strong>
+					{{ user.email }}</li>
+				<li>
+					<strong>Téléphone :</strong>
+					{{ user.telephone }}</li>
+			</ul>
+		</div>
+
+		{% if status == 'activé' %}
+			<div style="text-align: center; margin: 20px 0;">
+				<a href="{{ activationUrl }}" style="background-color: #1E81B0; color: #EEEEE4; padding: 12px 24px; text-decoration: none;border-radius: 5px;  display: inline-block;" class="button">
+					Accéder à mon espace
+				</a>
+			</div>
+		{% endif %}
+
+
+	</div>
+{% endblock %}

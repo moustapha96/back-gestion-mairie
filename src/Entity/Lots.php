@@ -45,7 +45,13 @@ class Lots
     #[ORM\Column]
     private ?float $prix = null;
 
-    #[ORM\ManyToOne(inversedBy: 'lots')]
+    #[ORM\Column(type: "float", nullable: true)]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float", nullable: true)]
+    private ?float $longitude = null;
+
+    #[ORM\ManyToOne(inversedBy: 'lots', fetch: 'EAGER')]
     #[Groups(['lot:item', 'lot:list'])]
     private ?Lotissement $lotissement = null;
 
@@ -114,6 +120,30 @@ class Lots
         return $this;
     }
 
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): static
+    {
+        $this->latitude = $latitude;
+
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): static
+    {
+        $this->longitude = $longitude;
+
+        return $this;
+    }
+
     public function getLotissement(): ?Lotissement
     {
         return $this->lotissement;
@@ -136,6 +166,8 @@ class Lots
             'statut' => $this->getStatut(),
             'prix' => $this->getPrix(),
             'lotissement' => $this->getLotissement() ? $this->getLotissement()->toArray() : null,
+            'latitude' => $this->getLatitude(),
+            'longitude' => $this->getLongitude(),
         ];
     }
 }

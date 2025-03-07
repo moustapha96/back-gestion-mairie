@@ -3,71 +3,119 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Réinitialisation de Mot de Passe</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				background-color: #f9f9f9;
-				color: #333;
-				margin: 0;
-				padding: 20px;
-			}
+		<title>
+			{% block title %}Réinitialisation de Mot de Passe
+			{% endblock %}
+		</title>
+		<style>:root
+		{
+			--primary-color: #e28743;
+			--secondary-color: #eab676;
+			--background-color: #eeeee4;
+			--text-color: #1D1D1D;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			background-color: var(--background-color);
+			color: var(--text-color);
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 600px;
+			margin: auto;
+			background: white;
+			padding: 20px;
+			border-radius: 12px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		.header {
+			text-align: center;
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			color: white;
+			padding: 20px 0;
+		}
+
+		.logo {
+			width: 120px;
+			height: auto;
+			margin-bottom: 16px;
+		}
+
+		.content {
+			padding: 32px 24px;
+		}
+
+		.button {
+			display: inline-block;
+			background-color: var(--primary-color);
+			color: white;
+			padding: 14px 32px;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			transition: background-color 0.3s ease;
+		}
+
+		.button:hover {
+			background-color: var(--secondary-color);
+		}
+
+		.footer {
+			text-align: center;
+			font-size: 14px;
+			color: var(--text-color);
+			margin-top: 20px;
+			padding: 20px;
+			border-top: 1px solid #dcdcdc;
+		}
+
+		.footer p {
+			color: var(--text-color);
+		}
+
+		@media(max-width: 600px) {
 			.container {
-				max-width: 600px;
-				margin: auto;
-				background: white;
-				padding: 20px;
-				border-radius: 5px;
-				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+				margin: 0 10px;
+				padding: 10px;
 			}
-			.header {
-				text-align: center;
-				background-color: #ff0000; /* Rouge */
-				color: white;
-				padding: 10px 0;
-			}
-			.logo {
-				width: 100px; /* Ajustez la taille selon vos besoins */
-			}
-			.footer {
-				text-align: center;
-				font-size: 12px;
-				color: #777;
-				margin-top: 20px;
-			}
-			a.button {
-				display: inline-block;
-				background-color: #0000ff; /* Bleu */
-				color: white;
-				padding: 10px 20px;
-				text-decoration: none;
-				border-radius: 5px;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container">
-			<div class="header">
-				<img src="https://authenticpage.com/logo_528.png" alt="AuthenticPage Logo" class="logo">
-				<h1>AuthenticPage</h1>
-			</div>
-
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<img src="{{ logo }}" alt="Logo Mairie" class="logo">
+			<h1>Réinitialisation de Mot de Passe</h1>
+		</div>
+		<div class="content">
 			<p>Bonjour,</p>
-
 			<p>Une demande de réinitialisation de mot de passe a été effectuée pour votre compte.</p>
-
-			<p>Pour réinitialiser votre mot de passe, veuillez cliquer sur le lien suivant :</p>
-
-			<p>
+			<p>Pour réinitialiser votre mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
+			<p style="text-align: center;">
 				<a href="{{ url }}" class="button">Réinitialiser mon mot de passe</a>
 			</p>
-
-			<p>Merci et bonne réception !</p>
-
-			<div class="footer">
-				<p>Cordialement,<br>
-					L'équipe AuthenticPage</p>
-			</div>
+			<p>Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer cet email.</p>
 		</div>
-	</body>
-</html>
+		<div class="footer">
+			<p>Cordialement,<br>L'équipe de la Mairie</p>
+			<p>
+				<small>©
+					{{ "now"|date('Y') }}
+					Mairie - Tous droits réservés</small>
+			</p>
+			<p>
+				<small>Pour toute assistance, contactez notre support :
+					{{ support_email }}</small>
+			</p>
+		</div>
+	</div>
+</body></html>

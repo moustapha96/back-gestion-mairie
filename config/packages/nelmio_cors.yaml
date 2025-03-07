@@ -1,10 +1,22 @@
+# nelmio_cors:
+#     defaults:
+#         origin_regex: true
+#         allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
+#         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+#         allow_headers: ['Content-Type', 'Authorization']
+#         expose_headers: ['Link']
+#         max_age: 3600
+#     paths:
+#         '^/': null
+
 nelmio_cors:
     defaults:
-        origin_regex: true
-        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
-        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-        allow_headers: ['Content-Type', 'Authorization']
-        expose_headers: ['Link']
-        max_age: 3600
+        allow_origin: ['*']
+        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']  # Méthodes autorisées
+        allow_headers: ['*']  # Accepte tous les en-têtes
+        expose_headers: []  # En-têtes exposés (laisser vide si non nécessaire)
+        max_age: 3600  # Durée de mise en cache des pré-requêtes
     paths:
-        '^/': null
+        '^/': null  # Applique la configuration à toutes les routes
+
+

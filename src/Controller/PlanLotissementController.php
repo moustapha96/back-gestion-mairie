@@ -22,18 +22,59 @@ class PlanLotissementController extends AbstractController
     {
         $this->em = $em;
     }
-    #[Route('/api/plan-lotissements/liste', name: 'api_plan_lotissement_list', methods: ['GET'])]
+    #[Route('/api/plan-lotissement/liste', name: 'api_plan_lotissement_list', methods: ['GET'])]
     public function listPlanLotissement(PlanLotissementRepository $planLotissementRepository): Response
     {
         $plansLotissements = $planLotissementRepository->findAll();
         $resultats = [];
         foreach ($plansLotissements as $planLotissement) {
-            $resultats[] = $planLotissement->toArray();
+            $resultats[] = [
+                'id' => $planLotissement->getId(),
+                'url' => $planLotissement->getUrl(),
+                'version' => $planLotissement->getVersion(),
+                'description' => $planLotissement->getDescription(),
+                'dateCreation' => $planLotissement->getDateCreation()->format('Y-m-d'),
+                'lotissement' => [
+                    'id' => $planLotissement->getLotissement()->getId(),
+                    'nom' => $planLotissement->getLotissement()->getNom(),
+                    'localisation' => $planLotissement->getLotissement()->getLocalisation(),
+                    'description' => $planLotissement->getLotissement()->getDescription(),
+                    'statut' => $planLotissement->getLotissement()->getStatut(),
+                    'dateCreation' => $planLotissement->getLotissement()->getDateCreation()->format('Y-m-d'),
+                ]
+            ];
         }
         return $this->json($resultats);
     }
 
-    #[Route('/api/plan-lotissements/create', name: 'api_plan_lotissement_create', methods: ['POST'])]
+    #[Route('/api/plan-lotissement/{id}/details', name: 'api_plan_lotissement_details', methods: ['GET'])]
+    public function detailPlanLotissement($id, PlanLotissementRepository $planLotissementRepository): Response
+    {
+        $planLotissement = $planLotissementRepository->find($id);
+        if (!$planLotissement) {
+            return $this->json(['message' => 'Plan lotissement non trouvé'], 404);
+        }
+        $resultats = [
+            'id' => $planLotissement->getId(),
+            'url' => $planLotissement->getUrl(),
+            'version' => $planLotissement->getVersion(),
+            'description' => $planLotissement->getDescription(),
+            'dateCreation' => $planLotissement->getDateCreation()->format('Y-m-d'),
+            'lotissement' => [
+                'id' => $planLotissement->getLotissement()->getId(),
+                'nom' => $planLotissement->getLotissement()->getNom(),
+                'localisation' => $planLotissement->getLotissement()->getLocalisation(),
+                'description' => $planLotissement->getLotissement()->getDescription(),
+                'statut' => $planLotissement->getLotissement()->getStatut(),
+                'dateCreation' => $planLotissement->getLotissement()->getDateCreation()->format('Y-m-d'),
+            ]
+        ];
+
+        return $this->json($resultats);
+    }
+
+
+    #[Route('/api/plan-lotissement/create', name: 'api_plan_lotissement_create', methods: ['POST'])]
     public function createPlanLotissement(Request $request, LotissementRepository $lotissementRepository): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -80,7 +121,7 @@ class PlanLotissementController extends AbstractController
         return $this->json($planLotissement, Response::HTTP_CREATED);
     }
 
-    #[Route('/api/plan-lotissements/{id}/update', name: 'api_plan_lotissement_update', methods: ['PUT'])]
+    #[Route('/api/plan-lotissement/{id}/update', name: 'api_plan_lotissement_update', methods: ['PUT'])]
     public function updatePlanLotissement(
         int $id,
         Request $request,
@@ -92,9 +133,9 @@ class PlanLotissementController extends AbstractController
         if (!$planLotissement) {
             return $this->json(['error' => 'PlanLotissement not found'], Response::HTTP_NOT_FOUND);
         }
-        $version = $request->request->get('version') ?? $data['version'] ?? null;
-        $description = $request->request->get('description') ?? $data['description'] ?? null;
-        $lotissementId = $request->request->get('lotissementId') ?? $data['lotissementId'] ?? null;
+        $version = $request->request->get('version');
+        $description = $request->request->get('description');
+        $lotissementId = $request->request->get('lotissementId');
 
         if (isset($lotissementId)) {
             $lotissement = $lotissementRepository->find($lotissementId);
@@ -131,5 +172,50 @@ class PlanLotissementController extends AbstractController
         $this->em->flush();
 
         return $this->json($planLotissement->toArray(), Response::HTTP_OK);
+    }
+
+
+    #[Route('/api/plan-lotissement/file/{id}', name: 'api_plan_lotissement_get_document', methods: ['GET'])]
+    public function planLotissementDocument(int $id, PlanLotissementRepository $planLotissementRepository): Response
+    {
+
+        $planLotissement = $planLotissementRepository->find($id);
+
+
+        try {
+            $mimeType = mime_content_type($planLotissement->getUrl());
+            if ($mimeType !== 'application/pdf') {
+                return new Response(
+                    json_encode(['message' => 'Le fichier doit être un PDF']),
+                    Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
+                    ['Content-Type' => 'application/json']
+                );
+            }
+            try {
+                $content = file_get_contents($planLotissement->getUrl());
+                if ($content === false) {
+                    throw new \Exception("Erreur lors de la lecture du fichier.");
+                }
+                $base64 = base64_encode($content);
+                $response = new Response(
+                    json_encode($base64),
+                    Response::HTTP_OK,
+                    ['Content-Type' => 'application/json']
+                );
+
+                return $response;
+            } catch (\Exception $e) {
+                return new Response(
+                    json_encode(['message' => 'Erreur lors de l\'encodage du fichier en base64', 'error' => $e->getMessage()]),
+                    Response::HTTP_INTERNAL_SERVER_ERROR,
+                    ['Content-Type' => 'application/json']
+                );
+            }
+        } catch (\Throwable $th) {
+            return new Response(
+                "Fichier non trouver",
+                Response::HTTP_OK
+            );
+        }
     }
 }

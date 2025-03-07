@@ -17,11 +17,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: LotissementRepository::class)]
 
 #[ApiResource(
-    operations: [
-        new Get(normalizationContext: ['groups' => ['lotissement:item']]),
-        new Post(normalizationContext: ['groups' => ['lotissement:write']]),
-        new GetCollection(normalizationContext: ['groups' => ['lotissement:list']]),
-    ],
+    normalizationContext: ['groups' => ['lotissement:item', 'lotissement:list']],
+    denormalizationContext: ['groups' => ['lotissement:write']],
+
     order: ["id" => "DESC"],
     paginationEnabled: false,
 )]
@@ -29,8 +27,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Table(name: '`gs_mairie_lotissements`')]
 class Lotissement
 {
-
-
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -52,6 +48,12 @@ class Lotissement
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateCreation = null;
 
+    #[ORM\Column(type: "float", nullable: true)]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float", nullable: true)]
+    private ?float $longitude = null;
+
     /**
      * @var Collection<int, PlanLotissement>
      */
@@ -66,10 +68,33 @@ class Lotissement
     #[Groups(['lotissement:item', 'lotissement:list'])]
     private Collection $lots;
 
+    #[ORM\OneToMany(mappedBy: 'lotissement', targetEntity: Parcelle::class)]
+    private Collection $parcelles;
+
+
+    #[ORM\ManyToOne(inversedBy: 'lotissements', fetch: 'EAGER', targetEntity: Localite::class, cascade: ["persist"])]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(["lotissement:write", "lotissement:list", "lotissement:item"])]
+    private ?Localite $localite = null;
+
+
     public function __construct()
     {
         $this->planLotissements = new ArrayCollection();
         $this->lots = new ArrayCollection();
+        $this->parcelles = new ArrayCollection();
+    }
+
+    public function getLocalite(): ?Localite
+    {
+        return $this->localite;
+    }
+
+    public function setLocalite(?Localite $localite): self
+    {
+        $this->localite = $localite;
+
+        return $this;
     }
 
     public function getId(): ?int
@@ -134,6 +159,28 @@ class Lotissement
     {
         $this->dateCreation = $dateCreation;
 
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
         return $this;
     }
 
@@ -206,10 +253,13 @@ class Lotissement
             'description' => $this->getDescription(),
             'statut' => $this->getStatut(),
             'dateCreation' => $this->getDateCreation() ? $this->getDateCreation()->format('Y-m-d H:i:s') : null,
-            // 'planLotissements' => array_map(function ($planLotissement) {
-            //     return $planLotissement->toArray();
-            // }, $this->getPlanLotissements()->toArray()),
-            // 'lots' => $this->getLots() ?  $this->getLots()->toArray() : null,
+            'planLotissements' => array_map(function ($planLotissement) {
+                return $planLotissement->toArray();
+            }, $this->getPlanLotissements()->toArray()),
+            'lots' => $this->getLots() ?  $this->getLots()->toArray() : null,
+            'localite' => $this->getLocalite() ? $this->getLocalite()->toArray() : null,
+            'latitude' => $this->getLatitude(),
+            'longitude' => $this->getLongitude(),
         ];
     }
     public function toArray1(): array
@@ -230,5 +280,35 @@ class Lotissement
                 return $planLotissement->toArray();
             }, $this->getPlanLotissements()->toArray()),
         ];
+    }
+
+    /**
+     * @return Collection<int, Parcelle>
+     */
+    public function getParcelles(): Collection
+    {
+        return $this->parcelles;
+    }
+
+    public function addParcelle(Parcelle $parcelle): static
+    {
+        if (!$this->parcelles->contains($parcelle)) {
+            $this->parcelles->add($parcelle);
+            $parcelle->setLotissement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParcelle(Parcelle $parcelle): static
+    {
+        if ($this->parcelles->removeElement($parcelle)) {
+            // set the owning side to null (unless already changed)
+            if ($parcelle->getLotissement() === $this) {
+                $parcelle->setLotissement(null);
+            }
+        }
+
+        return $this;
     }
 }

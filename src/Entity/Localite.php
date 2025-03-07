@@ -9,19 +9,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
+
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: LocaliteRepository::class)]
 
 #[ApiResource(
-    operations: [
-        new Get(normalizationContext: ['groups' => ['localite:item']]),
-        new Post(normalizationContext: ['groups' => ['localite:write']]),
-        new GetCollection(normalizationContext: ['groups' => ['localite:list']]),
-    ],
+    normalizationContext: ['groups' => ['localite:item', 'localite:list']],
+    denormalizationContext: ['groups' => ['localite:write']],
     order: ["id" => "DESC"],
     paginationEnabled: false
 )]
@@ -32,32 +27,44 @@ class Localite
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
     private ?string $nom = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
     private ?float $prix = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
     private ?string $description = null;
 
+    #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    private ?float $longitude = null;
 
     /**
      * @var Collection<int, DemandeTerrain>
      */
     #[ORM\OneToMany(targetEntity: DemandeTerrain::class, mappedBy: 'localite')]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write'])]
     private Collection $demandes;
+
+    #[ORM\OneToMany(mappedBy: 'localite', targetEntity: Lotissement::class)]
+    #[Groups(['localite:list', 'localite:item', 'localite:write'])]
+    private Collection $lotissements;
 
     public function __construct()
     {
         $this->demandes = new ArrayCollection();
+        $this->lotissements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -101,6 +108,28 @@ class Localite
         return $this;
     }
 
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
+        return $this;
+    }
+
     /**
      * @return Collection<int, DemandeTerrain>
      */
@@ -138,6 +167,38 @@ class Localite
             'nom' => $this->getNom(),
             'prix' => $this->getPrix(),
             'description' => $this->getDescription(),
+            'latitude' => $this->getLatitude(),
+            'longitude' => $this->getLongitude(),
         ];
+    }
+
+    /**
+     * @return Collection<int, Lotissement>
+     */
+    public function getLotissements(): Collection
+    {
+        return $this->lotissements;
+    }
+
+    public function addLotissement(Lotissement $lotissement): self
+    {
+        if (!$this->lotissements->contains($lotissement)) {
+            $this->lotissements->add($lotissement);
+            $lotissement->setLocalite($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLotissement(Lotissement $lotissement): self
+    {
+        if ($this->lotissements->removeElement($lotissement)) {
+            // set the owning side to null (unless already changed)
+            if ($lotissement->getLocalite() === $this) {
+                $lotissement->setLocalite(null);
+            }
+        }
+
+        return $this;
     }
 }

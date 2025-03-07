@@ -3,10 +3,12 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use App\Controller\DemandeController;
 use App\Repository\DemandeTerrainRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -16,11 +18,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: DemandeTerrainRepository::class)]
 
 #[ApiResource(
-    operations: [
-        new Get(normalizationContext: ['groups' => ['demande:item']]),
-        new Post(normalizationContext: ['groups' => ['demande:write']]),
-        new GetCollection(normalizationContext: ['groups' => ['demande:list']]),
-    ],
+    normalizationContext: ['groups' => ['demande:item', 'demande:list']],
+    denormalizationContext: ['groups' => ['demande:write']],
     order: ["id" => "DESC"],
     paginationEnabled: false,
 )]
@@ -32,6 +31,7 @@ class DemandeTerrain
     const PERMIS_OCCUPATION = 'PERMIS_OCCUPATION';
     const BAIL_COMMUNAL = 'BAIL_COMMUNAL';
     const CALCUL_REDEVANCE = 'CALCUL_REDEVANCE';
+    const PROPOSITION_BAIL = 'PROPOSITION_BAIL';
 
 
     const STATUT_REJETE = 'REJETE';
@@ -40,60 +40,80 @@ class DemandeTerrain
     const STATUT_EN_TRAITEMENT = 'EN_TRAITEMENT';
 
     #[ORM\Id]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     #[ORM\Column(length: 30)]
     private ?string $typeDemande = null;
 
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     #[ORM\Column]
     private ?float $superficie = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?string $usagePrevu = null;
 
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?bool $possedeAutreTerrain = null;
 
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?string $statut = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?\DateTimeInterface $dateCreation = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?\DateTimeInterface $dateModification = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?string $document = null;
 
-    #[ORM\ManyToOne(inversedBy: 'demandes')]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[ORM\ManyToOne(inversedBy: 'demandes', fetch: 'EAGER')]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?User $utilisateur = null;
 
-    #[ORM\OneToOne(mappedBy: 'demande', cascade: ['persist', 'remove'])]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
-    private ?DocumentGenere $documentGenerer = null;
 
-    #[ORM\ManyToOne(inversedBy: 'demandes')]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+
+
+
+    #[ORM\ManyToOne(inversedBy: 'demandes', fetch: 'EAGER')]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?Localite $localite = null;
 
+
     #[ORM\Column(length: 255)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?string $typeDocument = null;
+
+
+
+    #[ORM\OneToOne(cascade: ['persist', 'remove'], fetch: 'EAGER')]
+    #[ORM\JoinColumn(name: 'document_generer_id', referencedColumnName: 'id', nullable: true)]
+    private ?DocumentGenere $documentGenerer = null;
+
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $recto = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $verso = null;
+
+
+    public function __construct()
+    {
+        $this->dateCreation = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -107,7 +127,7 @@ class DemandeTerrain
 
     public function setTypeDemande(string $typeDemande): static
     {
-        if (!in_array($typeDemande, [self::PERMIS_OCCUPATION, self::BAIL_COMMUNAL, self::CALCUL_REDEVANCE])) {
+        if (!in_array($typeDemande, [self::PERMIS_OCCUPATION, self::BAIL_COMMUNAL, self::CALCUL_REDEVANCE, self::PROPOSITION_BAIL])) {
             throw new \InvalidArgumentException("Type de document invalide: " . $typeDemande);
         }
         $this->typeDemande = $typeDemande;
@@ -217,22 +237,7 @@ class DemandeTerrain
         return $this->documentGenerer;
     }
 
-    public function setDocumentGenerer(?DocumentGenere $documentGenerer): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($documentGenerer === null && $this->documentGenerer !== null) {
-            $this->documentGenerer->setDemande(null);
-        }
 
-        // set the owning side of the relation if necessary
-        if ($documentGenerer !== null && $documentGenerer->getDemande() !== $this) {
-            $documentGenerer->setDemande($this);
-        }
-
-        $this->documentGenerer = $documentGenerer;
-
-        return $this;
-    }
 
     public function getLocalite(): ?Localite
     {
@@ -260,7 +265,6 @@ class DemandeTerrain
             'dateCreation' => $this->getDateCreation()?->format('Y-m-d H:i:s'),
             'dateModification' => $this->getDateModification()?->format('Y-m-d H:i:s'),
             'document' => $this->getDocument(),
-            'documentGenerer' => $this->getDocumentGenerer() ? $this->getDocumentGenerer()->toArray() : null,
             'demandeur' => $this->getUtilisateur() ? [
                 'id' => $this->getUtilisateur()->getId(),
                 'nom' => $this->getUtilisateur()->getNom(),
@@ -292,77 +296,38 @@ class DemandeTerrain
         return $this;
     }
 
-    public function generateDocument(): void
+
+    public function getRecto(): ?string
     {
-        switch ($this->typeDemande) {
-            case self::PERMIS_OCCUPATION:
-                $this->generatePermisOccupationDocument();
-                break;
-            case self::BAIL_COMMUNAL:
-                $this->generateBailCommunalDocument();
-                break;
-            case self::CALCUL_REDEVANCE:
-                $this->generateCalculRedevanceDocument();
-                break;
-            default:
-                throw new \Exception('Type de demande inconnu');
+        return $this->recto;
+    }
+
+    public function setRecto(?string $recto): static
+    {
+        $this->recto = $recto;
+
+        return $this;
+    }
+
+    public function getVerso(): ?string
+    {
+        return $this->verso;
+    }
+
+    public function setVerso(?string $verso): static
+    {
+        $this->verso = $verso;
+
+        return $this;
+    }
+
+
+    public function setDocumentGenerer(?DocumentGenere $documentGenerer): self
+    {
+        $this->documentGenerer = $documentGenerer;
+        if ($documentGenerer !== null) {
+            $documentGenerer->setDemandeTerrain($this);
         }
-    }
-
-    // Méthode pour générer un document de type "Permis Occupation"
-    private function generatePermisOccupationDocument(): void
-    {
-        $document = new DocumentGenere();
-        $document->setTypeDocument(DocumentGenere::PERMIS_OCCUPATION);
-        $document->setDateCreation(new \DateTime());
-        $document->setDetails('Document pour Permis Occupation');
-
-        // Ajoutez ici d'autres informations spécifiques au Permis d'Occupation
-
-        // Lier le document à la demande
-        $this->documentGenerer = $document;
-    }
-
-    // Méthode pour générer un document de type "Bail Communal"
-    private function generateBailCommunalDocument(): void
-    {
-        $document = new DocumentGenere();
-        $document->setTypeDocument(DocumentGenere::BAIL_COMMUNAL);
-        $document->setDateCreation(new \DateTime());
-        $document->setDetails('Document pour Bail Communal');
-
-        // Lier le Bail Communal à ce document
-        $bailCommunal = new BailCommunal();
-        $bailCommunal->setReferenceBail('REF-123');
-        $bailCommunal->setDureeBail('5 ans');
-        $bailCommunal->setMontantRedevance(1000);
-        $bailCommunal->setModalitePaiement('Mensuel');
-        $bailCommunal->setClausseObligation('Respect des délais');
-
-        $document->setBailCommunal($bailCommunal);
-
-        // Lier le document à la demande
-        $this->documentGenerer = $document;
-    }
-
-    // Méthode pour générer un document de type "Calcul Redevance"
-    private function generateCalculRedevanceDocument(): void
-    {
-        $document = new DocumentGenere();
-        $document->setTypeDocument(DocumentGenere::CALCUL_REDEVANCE);
-        $document->setDateCreation(new \DateTime());
-        $document->setDetails('Document pour Calcul de Redevance');
-
-        // Lier le calcul de redevance à ce document
-        $calculRedevance = new CalculRedevance();
-        $calculRedevance->setBaseCalcul('Superficie');
-        $calculRedevance->setTaux(5);
-        $calculRedevance->setMontantRedevanceCalcule('5000');
-        $calculRedevance->setFormuleCalcul('Superficie * Taux');
-
-        $document->setCalculRedevance($calculRedevance);
-
-        // Lier le document à la demande
-        $this->documentGenerer = $document;
+        return $this;
     }
 }
