@@ -67,7 +67,7 @@ class MailService extends AbstractController
         return new Address($emailbase, $nombase);
     }
 
-    public function sendWelcomeMail($email, $token): string
+    public function sendWelcomeMail($email, $token, $url): string
     {
         try {
             $user = $this->userRepository->findOneBy(['email' => $email]);
@@ -82,7 +82,7 @@ class MailService extends AbstractController
                         'prenom' => $user->getPrenom(),
                         'nom' => $user->getNom(),
                         'token' => $token,
-                        'activationUrl' => sprintf('%s/activate?token=%s', 'http://localhost:8000', $token),
+                        'activationUrl' => sprintf('%s/activate?token=%s', $url, $token),
                     ]);
                 $this->mailer->send($emailSend);
                 return "Email envoyé avec succés !";

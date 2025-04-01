@@ -8,6 +8,7 @@ use App\Entity\DocumentGenere;
 use App\Repository\DemandeTerrainRepository;
 use App\Repository\LocaliteRepository;
 use App\Repository\UserRepository;
+use App\services\FonctionsService;
 use App\services\MailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,7 +16,9 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Smalot\PdfParser\Parser;
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 
 class DemandeController extends AbstractController
 {
@@ -115,7 +118,6 @@ class DemandeController extends AbstractController
         $dateNaissance = $request->request->get('dateNaissance');
         $numeroElecteur = $request->request->get('numeroElecteur');
 
-        $file = $request->files->get('document');
 
 
         if (!$prenom || !$nom || !$telephone || !$profession || !$adresse || !$lieuNaissance || !$numeroElecteur || !$dateNaissance) {
@@ -177,6 +179,7 @@ class DemandeController extends AbstractController
             ->setDateCreation(new \DateTime())
             ->setStatut(DemandeTerrain::STATUT_EN_COURS)
             ->setPossedeAutreTerrain($possedeAutreTerrain)
+            ->setMotifRefus(null)
             ->setLocalite($localite);
 
         /** @var UploadedFile|null $file */
@@ -215,22 +218,6 @@ class DemandeController extends AbstractController
         } else {
             return $this->json('Veuillez uploader le verso', Response::HTTP_BAD_REQUEST);
         }
-
-        // if ($file) {
-        //     $newFilename = sprintf(
-        //         '%s-%s-%s-%s.%s',
-        //         str_replace(' ', '-', strtolower($typeDocument)),
-        //         $typeDemande ? str_replace(' ', '-', strtolower($typeDemande)) : date('YmdHis'),
-        //         (new \DateTime())->format('Y-m-d'),
-        //         $user ? str_replace(' ', '-', strtolower($user->getEmail())) : date('YmdHis'),
-        //         $file->guessExtension()
-        //     );
-        //     $file->move($this->getParameter('document_directory'), $newFilename);
-        //     $url = $this->getParameter('document_directory') . "/" . $newFilename;
-        //     $demande->setDocument($url);
-        // } else {
-        //     return $this->json('Veuillez uploader un document', Response::HTTP_BAD_REQUEST);
-        // }
 
 
         $this->em->persist($demande);
@@ -291,6 +278,7 @@ class DemandeController extends AbstractController
             ->setDateCreation(new \DateTime())
             ->setStatut(DemandeTerrain::STATUT_EN_COURS)
             ->setPossedeAutreTerrain($possedeAutreTerrain)
+            ->setMotifRefus(null)
             ->setLocalite($localite);
 
         /** @var UploadedFile|null $recto  */
@@ -351,12 +339,14 @@ class DemandeController extends AbstractController
     }
 
 
-    // liste des tout les demandes
-    #[Route('/api/demande/liste', name: 'api_demande_liste', methods: ['GET'])]
-    public function listeDemande(DemandeTerrainRepository $demandeRepository): Response
+    #[Route('/api/demandeur/{id}/demandes', name: 'api_user_demande', methods: ['GET'])]
+    public function getDemandeurDemandes($id, UserRepository $userRepository, DemandeTerrainRepository $demandeRepository): Response
     {
-        $demandes = $demandeRepository->findAll();
-        $resultats = [];
+        $user = $userRepository->find($id);
+        if (!$user)
+            return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
+
+        $demandes = $demandeRepository->findBy(['utilisateur' => $user]);
 
         foreach ($demandes as $demande) {
             $resultats[] = [
@@ -369,6 +359,7 @@ class DemandeController extends AbstractController
                 'statut' => $demande->getStatut(),
                 'recto' => $demande->getRecto(),
                 'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
                 'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
                 'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
                 'document' => $demande->getDocument(),
@@ -387,16 +378,20 @@ class DemandeController extends AbstractController
                 'localite' => $demande->getLocalite() ? [
                     'id' => $demande->getLocalite()->getId(),
                     'nom' => $demande->getLocalite()->getNom(),
+                    'description' => $demande->getLocalite()->getDescription(),
                 ] : null,
             ];
         }
         return $this->json($resultats, Response::HTTP_OK);
     }
-
     // liste des demandes d'un demandeur
     #[Route('/api/demandes/demandeur/{id}', name: 'api_demande_demandeur', methods: ['GET'])]
-    public function demandeDemandeur(int $id, LocaliteRepository $localiteRepository, DemandeTerrainRepository $demandeRepository, UserRepository $userRepository): Response
-    {
+    public function demandeDemandeur(
+        int $id,
+        LocaliteRepository $localiteRepository,
+        DemandeTerrainRepository $demandeRepository,
+        UserRepository $userRepository
+    ): Response {
         $user = $userRepository->find($id);
 
         if (!$user)
@@ -426,6 +421,7 @@ class DemandeController extends AbstractController
                 'statut' => $demande->getStatut(),
                 'recto' => $demande->getRecto(),
                 'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
                 'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
                 'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
                 'document' => $demande->getDocument(),
@@ -440,12 +436,12 @@ class DemandeController extends AbstractController
                     'numeroElecteur' => $demande->getUtilisateur()->getNumeroElecteur(),
                     'profession' => $demande->getUtilisateur()->getProfession(),
                     'adresse' => $demande->getUtilisateur()->getAdresse(),
+                    'isHabitant' => $demande->getUtilisateur()->isHabitant() ? true : false,
                 ] : null,
                 'localite' => $localite ? $localite->toArray() : null,
                 'documentGenerer' => $demande->getDocumentGenerer() ? $demande->getDocumentGenerer()->toArray() : null
             ];
         }
-
         return $this->json($resultats, Response::HTTP_OK);
     }
 
@@ -466,6 +462,7 @@ class DemandeController extends AbstractController
                 'statut' => $demande->getStatut(),
                 'recto' => $demande->getRecto(),
                 'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
                 'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
                 'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
                 'document' => $demande->getDocument(),
@@ -523,6 +520,7 @@ class DemandeController extends AbstractController
                 'statut' => $demande->getStatut(),
                 'recto' => $demande->getRecto(),
                 'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
                 'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
                 'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
                 'document' => $demande->getDocument(),
@@ -537,6 +535,7 @@ class DemandeController extends AbstractController
                     'numeroElecteur' => $demande->getUtilisateur()->getNumeroElecteur(),
                     'profession' => $demande->getUtilisateur()->getProfession(),
                     'adresse' => $demande->getUtilisateur()->getAdresse(),
+                    'isHabitant' => $demande->getUtilisateur()->isHabitant() ? true : false,
                 ] : null,
                 'localite' => $localite ? $localite->toArray() : null,
                 'documentGenerer' => $demande->getDocumentGenerer() ? $demande->getDocumentGenerer()->toArray() : null
@@ -550,7 +549,8 @@ class DemandeController extends AbstractController
     public function demandeUserDetail(
         int $demandeId,
         DemandeTerrainRepository $demandeRepository,
-        LocaliteRepository $localiteRepository
+        LocaliteRepository $localiteRepository,
+        FonctionsService $fonctionsService
     ): Response {
 
         $demande = $demandeRepository->findOneBy(['id' => $demandeId]);
@@ -580,6 +580,7 @@ class DemandeController extends AbstractController
             'statut' => $demande->getStatut(),
             'recto' => $demande->getRecto(),
             'verso' => $demande->getVerso(),
+            'motif_refus' => $demande->getMotifRefus(),
             'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
             'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
             'document' => $demande->getDocument(),
@@ -594,11 +595,14 @@ class DemandeController extends AbstractController
                 'numeroElecteur' => $demande->getUtilisateur()->getNumeroElecteur(),
                 'profession' => $demande->getUtilisateur()->getProfession(),
                 'adresse' => $demande->getUtilisateur()->getAdresse(),
+                'isHabitant' => $fonctionsService->checkNumeroElecteurExist($demande->getUtilisateur()->getNumeroElecteur()),
             ] : null,
             'localite' => $localite ? [
                 'id' => $localite->getId(),
                 'nom' => $localite->getNom(),
                 'prix' => $localite->getPrix(),
+                'longitude' => $localite->getLongitude(),
+                'latitude' => $localite->getLatitude(),
                 'description' => $localite->getDescription(),
                 'lotissement' => $lotissement ? $lotissements : null
             ] : null,
@@ -699,6 +703,7 @@ class DemandeController extends AbstractController
 
         $demandes = $demandeRepository->findAll();
         $resultats = [];
+        // dd("arrie");
         foreach ($demandes as $demande) {
             $localite = $localiteRepository->find($demande->getLocalite()->getId());
             if ($localite) {
@@ -714,6 +719,7 @@ class DemandeController extends AbstractController
                 'usagePrevu' => $demande->getUsagePrevu(),
                 'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
                 'statut' => $demande->getStatut(),
+                'motif_refus' => $demande->getMotifRefus(),
                 'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
                 'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
                 'document' => $demande->getDocument(),
@@ -755,58 +761,448 @@ class DemandeController extends AbstractController
 
 
 
-    // #[Route('/api/demande/file/{demandeId}', name: 'api_demande_user_get_file', methods: ['GET'])]
-    // public function demandeUserDocument(int $demandeId, DemandeTerrainRepository $demandeRepository): Response
-    // {
-    //     $demande = $demandeRepository->findOneBy(['id' => $demandeId]);
+    #[Route('/api/demande/import', name: 'api_demande_import', methods: ['POST'])]
+    public function importerDemandes(
+        Request $request,
+        FonctionsService $fonctionsService,
+        LocaliteRepository $localiteRepository,
+        UserRepository $userRepository
+    ): Response {
+        $file = $request->files->get('file');
+        if (!$file) {
+            return $this->json(['error' => 'Fichier non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($file->getClientOriginalExtension() !== 'xlsx') {
+            return $this->json(['error' => 'Format de fichier incorrect'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $expectedHeaders = [
+            'CNI',
+            'Email',
+            'Nom',
+            'Prenom',
+            'Telephone',
+            'Adresse',
+            'Lieu de Naissance',
+            'Date de Naissance',
+            'Profession',
+            'Type de demande',
+            'Localite',
+            'Superficie',
+            'Usage prevu',
+            'Date Demande'
+        ];
+
+        try {
+            // Lire le fichier Excel
+            $spreadsheet = IOFactory::load($file->getPathname());
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
+
+            if (empty($rows)) {
+                return $this->json(['error' => 'Le fichier est vide'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Lecture de l'en-tête
+            $headers = array_shift($rows);
+
+            if (array_diff($expectedHeaders, $headers)) {
+                return $this->json([
+                    'error' => 'Format de fichier incorrect',
+                    'attendu' => $expectedHeaders,
+                    'reçu' => $headers
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $batchSize = 20;
+            $count = 0;
+
+            foreach ($rows as $row) {
+                if (count($row) < count($expectedHeaders)) {
+                    continue; // Ignore les lignes incomplètes
+                }
+
+                [
+                    $cni,
+                    $email,
+                    $nom,
+                    $prenom,
+                    $telephone,
+                    $adresse,
+                    $lieuDeNaissance,
+                    $dateNaissance,
+                    $profession,
+                    $typeDemande,
+                    $localite,
+                    $superficie,
+                    $usagePrevu,
+                    $dateDemande
+                ] = $row;
+
+                // Vérification et normalisation des données
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL) || empty($cni) || empty($nom) || empty($localite)) {
+                    continue;
+                }
+
+                $localiteTrouve = $localiteRepository->findOneBy(['nom' => $localite]);
+                if (!$localiteTrouve) {
+                    continue;
+                }
+
+                $utilisateur = $userRepository->findOneBy(['email' => $email, 'numeroElecteur' => $cni]);
+                if (!$utilisateur) {
+                    $utilisateur = new User();
+                    $utilisateur->setNom($nom);
+                    $utilisateur->setEmail($email);
+                    $utilisateur->setPrenom($prenom);
+                    $utilisateur->setAdresse($adresse);
+                    $utilisateur->setTelephone($telephone);
+                    $utilisateur->setProfession($profession);
+                    $utilisateur->setNumeroElecteur($cni);
+                    $utilisateur->setLieuNaissance($lieuDeNaissance);
+                    $utilisateur->setDateNaissance(new \DateTime($dateNaissance));
+                    $utilisateur->setEnabled(true);
+                    $utilisateur->setActiveted(false);
+                    $utilisateur->setRoles(User::ROLE_DEMANDEUR);
+                    $passwordGenere = $utilisateur->generatePassword(8);
+                    $utilisateur->setPassword(password_hash($passwordGenere, PASSWORD_BCRYPT));
+                    $utilisateur->setPasswordClaire($passwordGenere);
+                    $utilisateur->setTokenActiveted(bin2hex(random_bytes(32)));
+                    $utilisateur->setUsername($email);
+
+                    // VERIFIER SI C'EST UN HABITANT
+                    $resultat = $fonctionsService->checkNumeroElecteurExist($cni);
+                    $utilisateur->setHabitant($resultat ?? false);
+                    $this->em->persist($utilisateur);
+                }
+
+                $demande = new DemandeTerrain();
+                $demande->setLocalite($localiteTrouve);
+                $demande->setSuperficie($superficie);
+                $demande->setTypeDemande($typeDemande);
+                $demande->setUsagePrevu($usagePrevu);
+                $demande->setDateCreation(new \DateTime($dateDemande));
+                $demande->setDateModification(new \DateTime($dateDemande));
+                $demande->setStatut(DemandeTerrain::STATUT_EN_COURS);
+                $demande->setPossedeAutreTerrain(false);
+                $demande->setTypeDocument('CNI');
+                $demande->setDocumentGenerer(null);
+                $demande->setUtilisateur($utilisateur);
+                $demande->setRecto(null);
+                $demande->setVerso(null);
+
+                $documentGenere = $this->genererDocument($demande);
+                $documentGenere->setDemandeTerrain($demande);
+                $this->em->persist($documentGenere);
+                $demande->setDocumentGenerer($documentGenere);
+                $this->em->persist($demande);
+                if (($count % $batchSize) === 0) {
+                    $this->em->flush();
+                    $this->em->clear();
+                }
+                $count++;
+            }
+
+            $this->em->flush();
+
+            return $this->json(['message' => 'Importation terminée', 'total' => $count], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur lors de l\'importation : ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+    #[Route('/api/demande/demandeur/{id}/liste', name: 'api_demande_demandeur_liste', methods: ['GET'])]
+    public function listeDemandeDemandeur(
+        $id,
+        UserRepository $userRepository,
+        DemandeTerrainRepository $demandeRepository
+    ): Response {
+        $demandeur = $userRepository->find($id);
+        if (!$demandeur) {
+            return $this->json("Demandeur non trouvée", Response::HTTP_NOT_FOUND);
+        }
+
+        $demandes = $demandeRepository->findBy(['utilisateur' => $demandeur]);
+        $resultats = [];
+
+        foreach ($demandes as $demande) {
+            $resultats[] = [
+                'id' => $demande->getId(),
+                'typeDemande' => $demande->getTypeDemande(),
+                'typeDocument' => $demande->getTypeDocument(),
+                'superficie' => $demande->getSuperficie(),
+                'usagePrevu' => $demande->getUsagePrevu(),
+                'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
+                'statut' => $demande->getStatut(),
+                'recto' => $demande->getRecto(),
+                'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
+                'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
+                'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
+                'document' => $demande->getDocument(),
+                'demandeur' => $demande->getUtilisateur() ? [
+                    'id' => $demande->getUtilisateur()->getId(),
+                    'nom' => $demande->getUtilisateur()->getNom(),
+                    'prenom' => $demande->getUtilisateur()->getPrenom(),
+                    'email' => $demande->getUtilisateur()->getEmail(),
+                    'telephone' => $demande->getUtilisateur()->getTelephone(),
+                    'lieuNaissance' => $demande->getUtilisateur()->getLieuNaissance(),
+                    'dateNaissance' => $demande->getUtilisateur()->getDateNaissance(),
+                    'numeroElecteur' => $demande->getUtilisateur()->getNumeroElecteur(),
+                    'profession' => $demande->getUtilisateur()->getProfession(),
+                    'adresse' => $demande->getUtilisateur()->getAdresse(),
+                ] : null,
+                'localite' => $demande->getLocalite() ? $demande->getLocalite()->toArray() : null,
+            ];
+        }
+        return $this->json($resultats, Response::HTTP_OK);
+    }
+
+
+    #[Route('/api/demande/{id}/update-refus', name: 'api_demande_update_refus', methods: ['PUT'])]
+    public function updateRefusDemande($id, Request $request, DemandeTerrainRepository $demandeRepository): Response
+    {
+        $demande = $demandeRepository->find($id);
+        if (!$demande) {
+            return $this->json("Demande non trouvée", Response::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $motifRefus = $data['message'] ?? null;
+
+        if ($motifRefus) {
+            $demande->setMotifRefus($motifRefus);
+            $this->em->persist($demande);
+            $this->em->flush();
+            return $this->json("Motif de refus mis à jour", Response::HTTP_OK);
+        }
+
+        return $this->json("Aucun motif de refus fourni", Response::HTTP_BAD_REQUEST);
+    }
+
+    // #[Route('/api/demande/{id}/update', name: 'api_demande_update', methods: ['PUT'])]
+    // public function updateDemande(
+    //     $id,
+    //     DemandeTerrainRepository $demandeRepository,
+    //     Request $request,
+    //     UserRepository $userRepository,
+    //     LocaliteRepository $localiteRepository
+    // ): Response {
+
+    //     $demande = $demandeRepository->find($id);
+
     //     if (!$demande) {
     //         return $this->json(['message' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
     //     }
 
-    //     $recto = $demande->getRecto();
-    //     $verso = $demande->getVerso();
+    //     // Mise à jour des champs si fournis
+    //     $userId = $request->request->get('userId');
+    //     if ($userId) {
+    //         $user = $userRepository->find($userId);
+    //         if (!$user) {
+    //             return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+    //         }
+    //     }
+    //     $demande->setSuperficie($request->request->get('superficie')  ?? $demande->getSuperficie());
+    //     $demande->setUsagePrevu($request->request->get('usagePrevu') ?? $demande->getUsagePrevu());
+    //     $demande->setPossedeAutreTerrain($request->request->get('possedeAutreTerrain') ?? $demande->isPossedeAutreTerrain());
+    //     $demande->setTypeDemande($request->request->get('typeDemande') ?? $demande->getTypeDemande());
+    //     $demande->setTypeDocument($request->request->get('typeDocument') ?? $demande->getTypeDocument());
+    //     $demande->setStatut($request->request->get('statut') ?? $demande->getStatut());
 
-    //     if (!$recto && !$verso) {
-    //         return $this->json(['message' => 'Fichier non trouvé'], Response::HTTP_NOT_FOUND);
+    //     // Ajouter cette ligne dans votre méthode updateDemande
+    //     $demande->setMotifRefus($request->request->get('motif_refus') ?? $demande->getMotifRefus());
+
+    //     // Mise à jour de la localité
+    //     if (!empty($request->request->get['localiteId'])) {
+    //         $localite = $localiteRepository->find($request->request->get('localiteId'));
+    //         if (!$localite) {
+    //             return $this->json(['message' => 'Localité non trouvée'], Response::HTTP_NOT_FOUND);
+    //         }
+    //         $demande->setLocalite($localite);
     //     }
 
-    //     $parser = new Parser();
+    //     $demande->setDateModification(new \DateTime());
 
-    //     try {
-    //         $pdfRecto = $parser->parseFile($recto);
-    //         $pdfVerso = $parser->parseFile($verso);
+    //     // Gestion des fichiers recto et verso
+    //     /** @var UploadedFile|null $recto */
+    //     $recto = $request->files->get('recto');
+    //     /** @var UploadedFile|null $verso */
+    //     $verso = $request->files->get('verso');
 
-    //         // Convertir en UTF-8
-    //         $textRecto = mb_convert_encoding($pdfRecto->getText(), 'UTF-8', 'auto');
-    //         $textVerso = mb_convert_encoding($pdfVerso->getText(), 'UTF-8', 'auto');
+    //     $documentDir = $this->getParameter('document_directory');
 
-    //         // Vérifier et nettoyer l'encodage
-    //         if (!mb_check_encoding($textRecto, 'UTF-8')) {
-    //             $textRecto = utf8_encode($textRecto);
-    //         }
-    //         if (!mb_check_encoding($textVerso, 'UTF-8')) {
-    //             $textVerso = utf8_encode($textVerso);
-    //         }
-
-    //         // Lire les fichiers en base64
-    //         $base64Recto = base64_encode(file_get_contents($recto));
-    //         $base64Verso = base64_encode(file_get_contents($verso));
-
-    //         return $this->json([
-    //             'recto' => [
-    //                 // 'content' => $base64Recto,
-    //                 'text' => $textRecto
-    //             ],
-    //             'verso' => [
-    //                 // 'content' => $base64Verso,
-    //                 'text' => $textVerso
-    //             ]
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return $this->json(
-    //             ['message' => 'Erreur lors de la lecture du fichier', 'error' => $e->getMessage()],
-    //             Response::HTTP_INTERNAL_SERVER_ERROR
+    //     if ($recto) {
+    //         $newFilename = sprintf(
+    //             '%s-%s-recto-%s.%s',
+    //             str_replace(' ', '-', strtolower($demande->getTypeDocument())),
+    //             $demande->getTypeDemande() ? str_replace(' ', '-', strtolower($demande->getTypeDemande())) : date('YmdHis'),
+    //             str_replace(' ', '-', strtolower($demande->getUtilisateur()->getEmail())),
+    //             $recto->guessExtension()
     //         );
+    //         $recto->move($documentDir, $newFilename);
+    //         $demande->setRecto($documentDir . "/" . $newFilename);
     //     }
+
+    //     if ($verso) {
+    //         $newFilename = sprintf(
+    //             '%s-%s-verso-%s.%s',
+    //             str_replace(' ', '-', strtolower($demande->getTypeDocument())),
+    //             $demande->getTypeDemande() ? str_replace(' ', '-', strtolower($demande->getTypeDemande())) : date('YmdHis'),
+    //             str_replace(' ', '-', strtolower($demande->getUtilisateur()->getEmail())),
+    //             $verso->guessExtension()
+    //         );
+    //         $verso->move($documentDir, $newFilename);
+    //         $demande->setVerso($documentDir . "/" . $newFilename);
+    //     }
+
+    //     $this->em->persist($demande);
+    //     $this->em->flush();
+
+
+    //     return $this->json([
+    //         'message' => 'Demande mise à jour avec succès',
+    //         'demande' => [
+    //             'id' => $demande->getId(),
+    //             'superficie' => $demande->getSuperficie(),
+    //             'usagePrevu' => $demande->getUsagePrevu(),
+    //             'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
+    //             'typeDemande' => $demande->getTypeDemande(),
+    //             'typeDocument' => $demande->getTypeDocument(),
+    //             'statut' => $demande->getStatut(),
+    //             'recto' => $demande->getRecto(),
+    //             'verso' => $demande->getVerso(),
+    //             'motif_refus' => $demande->getMotifRefus(),
+    //             'dateModification' => $demande->getDateModification()->format('Y-m-d H:i:s'),
+    //             'localite' => $demande->getLocalite() ? $demande->getLocalite()->toArray() : null,
+    //         ],
+    //     ], Response::HTTP_OK);
     // }
+
+    #[Route('/api/demande/{id}/update', name: 'api_demande_update', methods: ['POST'])]
+    public function updateDemande(
+        $id,
+        DemandeTerrainRepository $demandeRepository,
+        Request $request,
+        UserRepository $userRepository,
+        LocaliteRepository $localiteRepository,
+        EntityManagerInterface $entityManager // Assurez-vous d'injecter l'EntityManager
+    ): Response {
+        $demande = $demandeRepository->find($id);
+
+        if (!$demande) {
+            return $this->json(['message' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Mise à jour des champs si fournis
+        $userId = $request->request->get('userId');
+        if ($userId) {
+            $user = $userRepository->find($userId);
+            if (!$user) {
+                return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+            }
+        }
+        // dd($request);
+
+        // Mise à jour des champs de base
+        $demande->setSuperficie($request->request->get('superficie') ?? $demande->getSuperficie());
+        $demande->setUsagePrevu($request->request->get('usagePrevu') ?? $demande->getUsagePrevu());
+        $demande->setPossedeAutreTerrain($request->request->get('possedeAutreTerrain') ?? $demande->isPossedeAutreTerrain());
+        $demande->setTypeDemande($request->request->get('typeDemande') ?? $demande->getTypeDemande());
+        $demande->setTypeDocument($request->request->get('typeDocument') ?? $demande->getTypeDocument());
+        $demande->setStatut($request->request->get('statut') ?? $demande->getStatut());
+
+        // Ajouter cette ligne pour le motif de refus
+        $demande->setMotifRefus($request->request->get('motif_refus') ?? $demande->getMotifRefus());
+
+        // Mise à jour de la localité - CORRECTION DE LA SYNTAXE
+        if ($request->request->get('localiteId')) {
+            $localite = $localiteRepository->find($request->request->get('localiteId'));
+            if (!$localite) {
+                return $this->json(['message' => 'Localité non trouvée'], Response::HTTP_NOT_FOUND);
+            }
+            $demande->setLocalite($localite);
+        }
+
+        $demande->setDateModification(new \DateTime());
+
+        // Gestion des fichiers recto et verso
+        /** @var UploadedFile|null $recto */
+        $recto = $request->files->get('recto');
+        /** @var UploadedFile|null $verso */
+        $verso = $request->files->get('verso');
+
+        $documentDir = $this->getParameter('document_directory');
+
+        if ($recto) {
+            $newFilename = sprintf(
+                '%s-%s-recto-%s.%s',
+                str_replace(' ', '-', strtolower($demande->getTypeDocument())),
+                $demande->getTypeDemande() ? str_replace(' ', '-', strtolower($demande->getTypeDemande())) : date('YmdHis'),
+                str_replace(' ', '-', strtolower($demande->getUtilisateur()->getEmail())),
+                $recto->guessExtension()
+            );
+            $recto->move($documentDir, $newFilename);
+            $demande->setRecto($documentDir . "/" . $newFilename);
+        }
+
+        if ($verso) {
+            $newFilename = sprintf(
+                '%s-%s-verso-%s.%s',
+                str_replace(' ', '-', strtolower($demande->getTypeDocument())),
+                $demande->getTypeDemande() ? str_replace(' ', '-', strtolower($demande->getTypeDemande())) : date('YmdHis'),
+                str_replace(' ', '-', strtolower($demande->getUtilisateur()->getEmail())),
+                $verso->guessExtension()
+            );
+            $verso->move($documentDir, $newFilename);
+            $demande->setVerso($documentDir . "/" . $newFilename);
+        }
+
+        // Utiliser $entityManager au lieu de $this->em
+        $entityManager->persist($demande);
+        $entityManager->flush();
+
+        return $this->json([
+            'message' => 'Demande mise à jour avec succès',
+            'demande' => [
+                'id' => $demande->getId(),
+                'superficie' => $demande->getSuperficie(),
+                'usagePrevu' => $demande->getUsagePrevu(),
+                'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
+                'typeDemande' => $demande->getTypeDemande(),
+                'typeDocument' => $demande->getTypeDocument(),
+                'statut' => $demande->getStatut(),
+                'recto' => $demande->getRecto(),
+                'verso' => $demande->getVerso(),
+                'motif_refus' => $demande->getMotifRefus(),
+                'dateModification' => $demande->getDateModification()->format('Y-m-d H:i:s'),
+                'localite' => $demande->getLocalite() ? $demande->getLocalite()->toArray() : null,
+            ],
+        ], Response::HTTP_OK);
+    }
+
+    #[Route('/api/demande/{id}/delete', name: 'api_demande_delete', methods: ['delete'])]
+    public function delete(
+        $id,
+        DemandeTerrainRepository $demandeTerrainRepository,
+        EntityManagerInterface $em
+    ): Response {
+        $demande = $demandeTerrainRepository->find($id);
+        if (!$demande) {
+            return $this->json(['message' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        $document = $demande->getDocumentGenerer();
+        if ($document) {
+            $em->remove($document);
+        }
+
+        $em->remove($demande);
+        $em->flush();
+
+        return $this->json(['message' => 'Demande supprimée avec succès'], Response::HTTP_OK);
+    }
 }

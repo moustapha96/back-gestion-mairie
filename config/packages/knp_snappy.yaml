@@ -1,0 +1,7 @@
+knp_snappy:
+  pdf:
+    enabled:    true
+    binary:     '%env(WKHTMLTOPDF_PATH)%'
+    options:    
+      encoding: 'UTF-8'
+      default-header: false

@@ -77,8 +77,11 @@ class LotissementController extends AbstractController
 
     // methode pour creer un lotissement
     #[Route('/api/lotissement/create', name: 'api_lotissement_creer', methods: ['POST'])]
-    public function createLotissement(Request $request, LotissementRepository $lotissementRepository, LocaliteRepository $localiteRepository): Response
-    {
+    public function createLotissement(
+        Request $request,
+        LotissementRepository $lotissementRepository,
+        LocaliteRepository $localiteRepository
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
         $localite = $localiteRepository->find($data['localiteId']);

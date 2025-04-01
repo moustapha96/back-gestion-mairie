@@ -59,17 +59,42 @@ class DocumentGenere
     #[Groups(['document:read'])]
     private ?\DateTimeInterface $dateCreation = null;
 
-    #[ORM\OneToOne(mappedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
+    // #[ORM\OneToOne(mappedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
+    // #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(['document:read'])]
+    // private ?DemandeTerrain $demandeTerrain = null;
+
+    #[ORM\OneToOne(inversedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['document:read'])]
     private ?DemandeTerrain $demandeTerrain = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['document:read'])]
+    private ?string $fichier = null;
 
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['document:read'])]
+    private bool $isGenerated = false;
 
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
+        $this->isGenerated = false;
     }
+
+    public function setFichier(?string $fichier): self
+    {
+        $this->fichier = $fichier;
+
+        return $this;
+    }
+
+    public function getFichier(): ?string
+    {
+        return $this->fichier;
+    }
+
 
     public function getId(): ?int
     {
@@ -126,14 +151,25 @@ class DocumentGenere
         return $this;
     }
 
+    public function isGenerated(): bool
+    {
+        return $this->isGenerated;
+    }
 
+    public function setIsGenerated(bool $isGenerated): static
+    {
+        $this->isGenerated = $isGenerated;
+        return $this;
+    }
     public function toArray(): array
     {
         return [
             'id' => $this->id,
             'type' => $this->type,
             'contenu' => $this->contenu,
-            'dateCreation' => $this->dateCreation ? $this->dateCreation->format('Y-m-d H:i:s') : null
+            'dateCreation' => $this->dateCreation ? $this->dateCreation->format('Y-m-d H:i:s') : null,
+            'isGenerated' => $this->isGenerated,
+            'fichier' => $this->fichier
         ];
     }
 }

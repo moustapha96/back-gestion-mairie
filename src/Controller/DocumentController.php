@@ -157,6 +157,7 @@ class DocumentController extends AbstractController
         foreach ($demandes as $demande) {
             $document = $demande->getDocumentGenerer();
             $localite = $localiteRepository->find($demande->getLocalite()->getId());
+
             if ($document) {
                 $documents[] = [
                     'id' => $document->getId(),
@@ -171,7 +172,19 @@ class DocumentController extends AbstractController
                         'superficie' => $demande->getSuperficie(),
                         'usagePrevu' => $demande->getUsagePrevu(),
                         'localite' => $localite ? $localite->toArray() : null,
-                    ]
+                    ],
+                    'demandeur' => $demande->getUtilisateur() ? [
+                        'id' => $demande->getUtilisateur()->getId(),
+                        'nom' => $demande->getUtilisateur()->getNom(),
+                        'prenom' => $demande->getUtilisateur()->getPrenom(),
+                        'email' => $demande->getUtilisateur()->getEmail(),
+                        'telephone' => $demande->getUtilisateur()->getTelephone(),
+                        'lieuNaissance' => $demande->getUtilisateur()->getLieuNaissance(),
+                        'dateNaissance' => $demande->getUtilisateur()->getDateNaissance()?->format('Y-m-d H:i:s'),
+                        'numeroElecteur' => $demande->getUtilisateur()->getNumeroElecteur(),
+                        'profession' => $demande->getUtilisateur()->getProfession(),
+                        'adresse' => $demande->getUtilisateur()->getAdresse(),
+                    ] : null,
                 ];
             }
         }

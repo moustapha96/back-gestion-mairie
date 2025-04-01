@@ -64,6 +64,14 @@ class Parcelle
     ])]
     private ?string $statut = null;
 
+    #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'parcelle:write'])]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'parcelle:write'])]
+    private ?float $longitude = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -115,5 +123,40 @@ class Parcelle
         $this->statut = $statut;
 
         return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
+        return $this;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'numero' => $this->getNumero(),
+            'surface' => $this->getSurface(),
+            'statut' => $this->getStatut(),
+            'lotissement' => $this->getLotissement() ? $this->getLotissement()->toArray() : null,
+            'latitude' => $this->getLatitude(),
+            'longitude' => $this->getLongitude(),
+        ];
     }
 }

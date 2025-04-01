@@ -13,17 +13,24 @@ use Doctrine\Common\Collections\Collection;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
+use Doctrine\DBAL\Types\TextType;
+use Dom\Text;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
+
+
 
 #[ORM\Entity(repositoryClass: DemandeTerrainRepository::class)]
 
 #[ApiResource(
-    normalizationContext: ['groups' => ['demande:item', 'demande:list']],
+    normalizationContext: [
+        'groups' => ['demande:item', 'demande:list'],
+        'enable_max_depth' => true
+    ],
     denormalizationContext: ['groups' => ['demande:write']],
     order: ["id" => "DESC"],
     paginationEnabled: false,
 )]
-
 #[ORM\Table(name: '`gs_mairie_demande_terrains`')]
 class DemandeTerrain
 {
@@ -32,8 +39,6 @@ class DemandeTerrain
     const BAIL_COMMUNAL = 'BAIL_COMMUNAL';
     const CALCUL_REDEVANCE = 'CALCUL_REDEVANCE';
     const PROPOSITION_BAIL = 'PROPOSITION_BAIL';
-
-
     const STATUT_REJETE = 'REJETE';
     const STATUT_VALIDE = 'VALIDE';
     const STATUT_EN_COURS = 'EN_COURS';
@@ -67,6 +72,11 @@ class DemandeTerrain
     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?string $statut = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?string $motif_refus = null;
+
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
     private ?\DateTimeInterface $dateCreation = null;
@@ -80,11 +90,9 @@ class DemandeTerrain
     private ?string $document = null;
 
     #[ORM\ManyToOne(inversedBy: 'demandes', fetch: 'EAGER')]
-    #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    #[Groups(['demande:list', 'demande:item', 'demande:write', 'localite:item', 'localite:list'])]
+    #[MaxDepth(1)]
     private ?User $utilisateur = null;
-
-
-
 
 
     #[ORM\ManyToOne(inversedBy: 'demandes', fetch: 'EAGER')]
@@ -97,9 +105,8 @@ class DemandeTerrain
     private ?string $typeDocument = null;
 
 
-
-    #[ORM\OneToOne(cascade: ['persist', 'remove'], fetch: 'EAGER')]
-    #[ORM\JoinColumn(name: 'document_generer_id', referencedColumnName: 'id', nullable: true)]
+    #[ORM\OneToOne(mappedBy: 'demandeTerrain', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
+    #[Groups(['demande:list', 'demande:item', 'demande:write'])]
     private ?DocumentGenere $documentGenerer = null;
 
 
@@ -264,6 +271,7 @@ class DemandeTerrain
             'statut' => $this->getStatut(),
             'dateCreation' => $this->getDateCreation()?->format('Y-m-d H:i:s'),
             'dateModification' => $this->getDateModification()?->format('Y-m-d H:i:s'),
+            'motif_refus' => $this->getMotifRefus(),
             'document' => $this->getDocument(),
             'demandeur' => $this->getUtilisateur() ? [
                 'id' => $this->getUtilisateur()->getId(),
@@ -328,6 +336,18 @@ class DemandeTerrain
         if ($documentGenerer !== null) {
             $documentGenerer->setDemandeTerrain($this);
         }
+        return $this;
+    }
+
+    public function getMotifRefus(): ?string
+    {
+        return $this->motif_refus;
+    }
+
+    public function setMotifRefus(?string $motif_refus): static
+    {
+        $this->motif_refus = $motif_refus;
+
         return $this;
     }
 }

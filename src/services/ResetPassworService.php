@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Csrf\TokenGenerator\TokenGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
@@ -32,6 +33,7 @@ class ResetPassworService extends AbstractController
 
     private $userRepository;
 
+
     public function __construct(
         ConfigurationService $config,
         ResetPasswordHelperInterface $resetPasswordHelper,
@@ -39,7 +41,8 @@ class ResetPassworService extends AbstractController
         MailerInterface $mailer,
         TranslatorInterface $translator,
         UserPasswordHasherInterface $userPasswordHasher,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        TokenGeneratorInterface $tokenGenerator
     ) {
         $this->config = $config;
         $this->resetPasswordHelper = $resetPasswordHelper;
@@ -48,6 +51,7 @@ class ResetPassworService extends AbstractController
         $this->translator = $translator;
         $this->userPasswordHasher = $userPasswordHasher;
         $this->userRepository = $userRepository;
+        $this->tokenGenerator = $tokenGenerator;
     }
 
     /**
@@ -66,12 +70,19 @@ class ResetPassworService extends AbstractController
         if (!$user) {
             throw new EntityNotFoundException("Utilisateur avec ce token n'esxite pas ");
         }
+        // dd($user);
+        if ($user->getResetTokenExpiredAt() < new \DateTimeImmutable()) {
+            return "Le token a expiré , veuillez ressayer";
+        }
         $user->setResetToken(null);
         $encodedPassword = $this->userPasswordHasher->hashPassword(
             $user,
             $password
         );
         $user->setPassword($encodedPassword);
+        $user->setPasswordClaire($password);
+        $user->setResetTokenExpiredAt(null);
+        $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return "Mot de passe mis à jour";
@@ -120,52 +131,61 @@ class ResetPassworService extends AbstractController
     }
 
 
+    private function getEmailSender(): Address
+    {
+        $emailbase = $this->config->get("email") ?? "moustaphakhouma965@gmail.com";
+        $nombase = $this->config->get("titre") ?? "Gestion de la mairie";
+        return new Address($emailbase, $nombase);
+    }
     /**
      * @param string $emailFormData
      * @param string $uri
      * @throws EntityNotFoundException
      */
-    public function processSendingPasswordResetEmail(string $emailFormData, string $uri)
+    public function processSendingPasswordResetEmail(string $emailFormData, string $uri): string
     {
+        // Recherche de l'utilisateur par email
+        $user = $this->userRepository->findOneBy(['email' => $emailFormData]);
 
-        $emailbase = $this->config->get("email") ?? "contact@authenticpage.com";
-        $nombase =  $this->config->get("name") ?? "Authentic Page";
-        $user =   $this->userRepository->findOneBy(['email' => $emailFormData]);
-
-
+        // Vérifier si l'utilisateur existe
         if (!$user) {
-            return "Cette adresse e-mail est inconnu dans notre base";
+            return 'Aucun utilisateur trouvé avec cet email.';
         }
 
         try {
-            $tokenG = $this->resetPasswordHelper->generateResetToken($user);
-
-            $user->setResetToken($tokenG->getToken());
+            // Génération du token de réinitialisation
+            // $tokenG = $this->resetPasswordHelper->generateResetToken($user);
+            // Enregistrement du token dans l'entité utilisateur
+            $token = $this->tokenGenerator->generateToken();
+            $user->setResetToken($token);
+            $user->setResetTokenExpiredAt(new \DateTimeImmutable('+30 minutes'));
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
-            try {
-                $url = $uri . '?token=' . $tokenG->getToken();
-                $email = (new TemplatedEmail())
-                    ->from(new Address($emailbase, $nombase))
-                    ->to($user->getEmail())
-                    ->subject('Votre demande de réinitialisation de mot de passe')
-                    ->htmlTemplate('reset_password/emailTokenApi.html.twig')
-                    ->context([
-                        'url' => $url,
-                        'resetToken' => $tokenG,
-                    ]);
-                $this->mailer->send($email);
+            // Construction de l'URL de réinitialisation
+            $url = $uri . '?token=' . urlencode($token);
 
-                return 'Demande envoyé, Merci de vérifier votre boite mail ';
-            } catch (\Throwable $th) {
-                return 'Demande non envoyé, Merci de réessayer plus tard ';
-            }
+            // Création et envoi de l'email
+            $email = (new TemplatedEmail())
+                ->from($this->getEmailSender())
+                ->to($user->getEmail())
+                ->subject('Votre demande de réinitialisation de mot de passe')
+                ->htmlTemplate('reset_password/emailTokenApi.html.twig')
+                ->context([
+                    'url' => $url,
+                    'resetToken' => $token,
+                    'user' => $user
+                ]);
+
+            $this->mailer->send($email);
+
+            return 'Demande envoyée, merci de vérifier votre boîte mail.';
         } catch (ResetPasswordExceptionInterface $e) {
 
-            $time = $this->resetPasswordHelper->getTokenLifetime();
-            $error = "Veuillez vérifier votre boite mail ou \n Réessayer dans  " . $time . " secondes";
-            return $error;
+            return $e;
+            // return 'Erreur lors de la génération du lien de réinitialisation : ' . $e->getMessage();
+        } catch (\Throwable $th) {
+            return 'Une erreur est survenue lors de l’envoi de l’email. Veuillez réessayer plus tard.' . $th->getMessage();
         }
     }
 }

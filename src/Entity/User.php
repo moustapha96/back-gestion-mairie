@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\services\FonctionsService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -17,6 +18,12 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
+
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Mapping\PreUpdate;
+use Doctrine\ORM\Mapping\PrePersist;
 
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -24,8 +31,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['email'], message: 'Cet e-mail est déjà utilisé par un autre utilisateur')]
 #[UniqueEntity(fields: ['numeroElecteur'], message: "Numero Electeur est déjà utilisé par un autre utilisateur")]
 
+#[ORM\HasLifecycleCallbacks]
+
 #[ApiResource(
-    normalizationContext: ['groups' => ['user:item', 'user:list']],
+    normalizationContext: [
+        'groups' => ['user:item', 'user:list'],
+        'enable_max_depth' => true
+    ],
     denormalizationContext: ['groups' => ['user:write']],
     order: ["id" => "DESC"],
     paginationEnabled: false,
@@ -39,7 +51,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const ROLE_AGENT = 'ROLE_AGENT';
     const ROLE_DEMANDEUR = 'ROLE_DEMANDEUR';
     const ROLE_ADMIN = "ROLE_ADMIN";
-
     const ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
 
 
@@ -76,6 +87,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:write'])]
     #[ORM\Column(length: 255, nullable: true)]
     private $reset_token;
+
+    #[Groups(['user:write'])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private $reset_token_expired_at;
 
     #[ORM\Column(nullable: true)]
     private ?bool $enabled = null;
@@ -121,13 +136,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
     private ?string $numeroElecteur = null;
 
-
-    /**
-     * @var Collection<int, DemandeTerrain>
-     */
     #[ORM\OneToMany(targetEntity: DemandeTerrain::class, mappedBy: 'utilisateur')]
     #[Groups(['user:item'])]
+    #[MaxDepth(1)]
     private Collection $demandes;
+
+
 
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     #[Groups(['user:item'])]
@@ -138,9 +152,56 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?bool $habitant = null;
 
-    public function __construct()
+
+    /**
+     * @param PreUpdateEventArgs $event
+     */
+    #[PreUpdate]
+    public function preUpdate(PreUpdateEventArgs $event): void
     {
+        // Check if numeroElecteur has changed
+        if ($event->hasChangedField('numeroElecteur')) {
+            $this->updateHabitantStatus();
+        }
+    }
+    /**
+     * @param PrePersistEventArgs $event
+     */
+    #[PrePersist]
+    public function prePersist(PrePersistEventArgs $event): void
+    {
+        // Update habitant status before initial persist
+        if ($this->getNumeroElecteur() !== null) {
+            $this->updateHabitantStatus();
+        }
+    }
+    private ?FonctionsService $fonctionsService = null;
+
+    public function __construct(?FonctionsService $fonctionsService = null)
+    {
+        $this->fonctionsService = $fonctionsService;
         $this->demandes = new ArrayCollection();
+
+
+        if ($fonctionsService !== null && $this->getNumeroElecteur() !== null) {
+            $this->updateHabitantStatus();
+        }
+    }
+
+    /**
+     * Updates the habitant status by checking the numeroElecteur
+     * This method should be called whenever numeroElecteur changes
+     * 
+     * @return void
+     */
+    public function updateHabitantStatus(): void
+    {
+        if ($this->fonctionsService === null || $this->getNumeroElecteur() === null) {
+            return;
+        }
+
+        $resultat = $this->fonctionsService->checkNumeroElecteurExist($this->getNumeroElecteur());
+        $this->habitant = $resultat ?? false;
     }
 
 
@@ -178,6 +239,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->username = $username;
 
+        return $this;
+    }
+
+    public function getResetTokenExpiredAt(): ?\DateTimeInterface
+    {
+        return $this->reset_token_expired_at;
+    }
+
+    public function setResetTokenExpiredAt(?\DateTimeInterface $reset_token_expired_at): self
+    {
+        $this->reset_token_expired_at = $reset_token_expired_at;
         return $this;
     }
 
@@ -476,12 +548,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->numeroElecteur;
     }
 
-    public function setNumeroElecteur(string $numeroElecteur): static
+    // public function setNumeroElecteur(string $numeroElecteur): static
+    // {
+    //     $this->numeroElecteur = $numeroElecteur;
+
+    //     return $this;
+    // }
+
+    public function setNumeroElecteur(?string $numeroElecteur): static
     {
         $this->numeroElecteur = $numeroElecteur;
 
+        // Update habitant status whenever numeroElecteur is changed
+        if ($numeroElecteur !== null && $this->fonctionsService !== null) {
+            $this->updateHabitantStatus();
+        }
+
         return $this;
     }
+
+
+
+
     /**
      * @return Collection<int, DemandeTerrain>
      */
@@ -555,14 +643,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             'adresse' => $this->getAdresse(),
             'numeroElecteur' => $this->getNumeroElecteur() ?? null,
             'profession' => $this->getProfession(),
+            'isHabitant' => $this->isHabitant(),
         ];
     }
 
 
 
+    /**
+     * Check if the user is a habitant.
+     *
+     * @return bool|null Returns true if the user is a habitant, false if not, or null if the status is unknown.
+     */
+
     public function isHabitant(): ?bool
     {
-        return $this->habitant;
+        if ($this->fonctionsService === null || $this->getNumeroElecteur() === null) {
+            return $this->habitant;
+        }
+
+        $resultat = $this->fonctionsService->checkNumeroElecteurExist($this->getNumeroElecteur());
+        return $resultat ?? $this->habitant;
     }
 
     public function setHabitant(?bool $habitant): static

@@ -139,6 +139,8 @@ php bin/console doctrine:database:create
 
  verifier la base de donnees : php bin/console doctrine:schema:validate
 
+-----------------------------------------
+
 
 -----------------------------------------
 
@@ -146,3 +148,9 @@ Installer smalot/pdfparser pour extraire le contenu du PDF :
 Exécute cette commande avec Composer :
 
  composer require smalot/pdfparser --ignore-platform-req=ext-sodium
+
+ composer require knplabs/knp-snappy-bundle --ignore-platform-req=ext-sodium
+
+ ----------------------------------------------------------------------------
+
+ composer require phpoffice/phpspreadsheet --ignore-platform-req=ext-sodium

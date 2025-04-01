@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>{{ data.typeDemande == 'PERMIS_OCCUPATION' ? 'PERMIS D\'OCCUPER' : 'PROPOSITION DE BAIL COMMUNAL' }}</title>
+		<style>
+			@page {
+				margin: 2cm;
+			}
+			body {
+				font-family: Arial, sans-serif;
+				line-height: 1.6;
+				margin: 0;
+				padding: 20px;
+				background-image: url('{{ logoMairie }}');
+																background-size: cover;
+																background-position: center;
+																background-repeat: no-repeat;
+																color: #000; 
+															}
+															.header {
+																display: flex;
+																align-items: flex-start;
+																justify-content: space-between;
+															}
+															.logo {
+																width: 100px;
+																margin-bottom: 10px;
+															}
+															.republic {
+																font-size: 16px;
+																font-weight: bold;
+																margin: 5px 0;
+															}
+															.motto {
+																font-style: italic;
+																font-size: 12px;
+																margin: 5px 0;
+															}
+															.document-number {
+																text-align: right;
+																border: 1px solid #000;
+																padding: 5px;
+																margin-left: auto;
+																width: 300px;
+																margin-bottom: 20px;
+																background-color: rgba(255, 255, 255, 0.8);
+															}
+															.title {
+																font-size: 24px;
+																font-weight: bold;
+																text-align: center;
+																margin: 30px 0;
+																text-transform: uppercase;
+																letter-spacing: 2px;
+															}
+															.section-title {
+																font-size: 18px;
+																font-weight: bold;
+																margin-top: 20px;
+																text-decoration: underline;
+																background-color: rgba(255, 255, 255, 0.8);
+																padding: 5px;
+															}
+															.content {
+																margin: 20px 0;
+																background-color: rgba(255, 255, 255, 0.8);
+																padding: 20px;
+																display: flex;
+															}
+															.civil-status {
+																float: left;
+																width: 30px;
+																border: 1px solid #000;
+																padding: 5px;
+																text-align: center;
+																margin-right: 20px;
+																background-color: white;
+															}
+															.main-content {
+																flex: 1;
+															}
+															.field {
+																margin: 10px 0;
+																display: flex;
+																align-items: baseline;
+															}
+															.field-label {
+																min-width: 200px;
+																font-weight: bold;
+																text-align: left;
+															}
+															.field-value {
+																flex: 1;
+																border-bottom: 1px dotted #000;
+																margin-left: 10px;
+																padding: 0 5px;
+																text-align: center;
+															}
+															.conditions {
+																margin: 20px 0;
+															}
+															.condition {
+																margin: 10px 0;
+																text-align: justify;
+															}
+															.signature {
+																margin-top: 50px;
+																text-align: right;
+															}
+															.ampliations {
+																margin-top: 30px;
+																background-color: rgba(255, 255, 255, 0.8);
+																padding: 10px;
+															}
+															.ampliations-title {
+																text-decoration: underline;
+																margin-bottom: 10px;
+															}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<div>
+				<img src="{{ logoSenegal }}" alt="Logo du Sénégal" class="logo">
+				<div class="republic">REPUBLIQUE DU SENEGAL</div>
+				<div class="motto">UN PEUPLE - UN BUT - UNE FOI</div>
+				<div>REGION DE
+					{{ data.localite|upper }}</div>
+				<div>COMMUNE DE
+					{{ data.localite|upper }}</div>
+				<div style="margin-top: 2%">
+					<img src="{{ logoMairie }}" alt="Logo de la Mairie" class="logo">
+				</div>
+			</div>
+			<div class="document-number">
+				{{ data.localite }}, le
+				{{ date|date('d/m/Y') }}<br>
+				N°
+				{{ data.numeroPermis }}
+			</div>
+		</div>
+
+		<div class="title">
+			{{ data.typeDemande == 'PERMIS_OCCUPATION' ? 'PERMIS D\'OCCUPER' : 'PROPOSITION DE BAIL COMMUNAL' }}
+		</div>
+
+		<div class="content">
+			<div class="civil-status">
+				<div>E</div>
+				<div>T</div>
+				<div>A</div>
+				<div>T</div>
+				<div>&nbsp;</div>
+				<div>C</div>
+				<div>I</div>
+				<div>V</div>
+				<div>I</div>
+				<div>L</div>
+			</div>
+			<div class="main-content">
+				<div class="section-title">Informations sur le Bénéficiaire</div>
+				<div class="field">
+					<span class="field-label">Prénom :</span>
+					<span class="field-value">{{ data.beneficiaire.prenom }}</span>
+				</div>
+				<div class="field">
+					<span class="field-label">Nom :</span>
+					<span class="field-value">{{ data.beneficiaire.nom }}</span>
+				</div>
+				<div class="field">
+					<span class="field-label">Date et lieu de Naissance :</span>
+					<span class="field-value">{{ data.beneficiaire.dateNaissance|date('d/m/Y') }} à {{ data.beneficiaire.lieuNaissance }}</span>
+				</div>
+				<div class="field">
+					<span class="field-label">Numéro Carte Nationale D'identité :</span>
+					<span class="field-value">{{ data.cni.numero }}</span>
+	</body>
+</html></div><div class="field">
+<span class="field-label">Délivrée à
+	{{ data.cni.lieuDelivrance }}, le :</span>
+<span class="field-value">{{ data.cni.dateDelivrance|date('d/m/Y') }}</span></div><div class="section-title">Détails du Terrain</div><div class="field">
+<span class="field-label">Est autorisé à occuper la parcelle lot N° :</span>
+<span class="field-value">{{ data.numeroParcelle }}</span></div><div class="field">
+<span class="field-label">Du plan de lotissement de :</span>
+<span class="field-value">{{ data.lotissement }}</span></div><div class="field">
+<span class="field-label">T.F :</span>
+<span class="field-value">{{ data.referenceCadastrale }}
+	propriété de la Commune de
+	{{ data.localite }}</span></div>{% if data.typeDemande == 'PERMIS_OCCUPATION' %}
+<div class="section-title">Conditions d'Occupation</div>
+<div class="conditions">
+	<div class="condition">1) L'autorisation est personnelle</div>
+	<div class="condition">2) Aucune construction ne peut être entreprise sans autorisation de construction délivrée par les autorités compétentes.</div>
+	<div class="condition">3) La Commune de
+		{{ data.localite }}
+		se réserve le droit d'une reprise de la parcelle pour des raisons d'intérêt public.</div>
+	<div class="condition">4) L'attributaire doit effectivement occuper et procéder à la suite, à la mise en valeur de la parcelle dans un délai de deux (02) ans à compter de la date de signature du présent permis d'occuper.</div>
+	<div class="condition">5) L'inobservation d'une des conditions sera sanctionnée par le retrait de la parcelle.</div>
+</div>{% else %}
+<div class="section-title">Détails du Bail Communal</div>
+<div class="field">
+	<span class="field-label">Section arrêté Ministériel portant répartition nationale du crédit de bail communal</span>
+</div>
+<div class="field">
+	<span class="field-label">Valeur du m² x surface :</span>
+	<span class="field-value">{{ data.superficie }}
+		m²</span>
+</div>{% endif %}</div></div><div class="signature"><div>Fait à{{ data.localite }}, le{{ date|date('d/m/Y') }}</div><div style="margin-top: 30px;">Le Maire</div></div><div class="ampliations"><div class="ampliations-title">Ampliations :</div><div>S.G</div><div>DDPF</div><div>Intéressé</div><div>Archives</div><div>Cadastre</div><div>Domaine</div></div></body></html>

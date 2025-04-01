@@ -197,13 +197,17 @@ class LocaliteController extends AbstractController
     }
 
     #[Route('/api/localite/{id}/details-confirmation', name: 'api_localite_show_confirmation', methods: ['GET'])]
-    public function detailsConfirmation(Localite $localite): Response
-    {
+    public function detailsConfirmation(
+        Localite $localite,
+        LotissementRepository $lotissementRepository
+    ): Response {
         if (!$localite) return $this->json(['message' => 'Localité non trouvée'], 404);
 
         $resultats = [];
 
-        foreach ($localite->getLotissements() as $lotissement) {
+        $lotissements = $lotissementRepository->findBy(['localite' => $localite]);
+
+        foreach ($lotissements as $lotissement) {
             $resultats[] = [
                 'id' => $lotissement->getId(),
                 'nom' => $lotissement->getNom(),

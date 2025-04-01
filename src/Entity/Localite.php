@@ -27,27 +27,27 @@ class Localite
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?string $nom = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?float $prix = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?string $description = null;
 
     #[ORM\Column(type: "float", nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?float $latitude = null;
 
     #[ORM\Column(type: "float", nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?float $longitude = null;
 
     /**
@@ -58,7 +58,7 @@ class Localite
     private Collection $demandes;
 
     #[ORM\OneToMany(mappedBy: 'localite', targetEntity: Lotissement::class)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demandeur:list'])]
     private Collection $lotissements;
 
     public function __construct()

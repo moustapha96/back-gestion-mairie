@@ -7,6 +7,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\services\FonctionsService;
 use App\services\MailService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,17 +17,20 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UserController extends AbstractController
 {
 
     private $security;
     private $mailService;
+    private $fonctionsService;
 
-    public function __construct(Security $security, MailService $mailService)
+    public function __construct(Security $security, MailService $mailService, FonctionsService $fonctionsService)
     {
         $this->security = $security;
         $this->mailService = $mailService;
+        $this->fonctionsService = $fonctionsService;
     }
 
     #[Route('/api/user/create', name: 'api_users_creation', methods: ['POST'])]
@@ -64,16 +68,70 @@ class UserController extends AbstractController
         $user->setActiveted(false);
         $user->setEnabled(false);
 
+        // $resultat = $this->fonctionsService->checkNumeroElecteurExist($cni);
+        $user->setHabitant(false);
+        $url = $data['url'] ?? null;
+
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
             return new Response(json_encode(['errors' => (string) $errors]), Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json']);
         }
 
         $userRepository->save($user, true);
-        $this->mailService->sendWelcomeMail($user->getEmail(), $user->getTokenActiveted());
+        $this->mailService->sendWelcomeMail($user->getEmail(), $user->getTokenActiveted(), $url);
         return new Response(json_encode($user->toArray()), Response::HTTP_CREATED, ['Content-Type' => 'application/json']);
     }
 
+
+    #[Route('/api/user/inscription', name: 'api_users_inscription', methods: ['POST'])]
+    public function inscription(
+        Request $request,
+        ValidatorInterface $validator,
+        UserRepository $userRepository,
+    ): Response {
+
+        $data = json_decode($request->getContent(), true);
+        // dd($data);
+        $user = new User();
+        if ($userRepository->findOneBy(['email' => $data['email']])) {
+            return new JsonResponse([
+                'message' => 'Cet utilisateur existe déjà',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        $user->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
+        $user->setTokenActiveted(bin2hex(random_bytes(32)));
+        // $user->setNumeroElecteur(null);
+        $user->setDateNaissance(isset($data["dateNaissance"]) ? new \DateTime($data["dateNaissance"]) : null);
+        $user->setLieuNaissance($data["lieuNaissance"] ?? null);
+        $user->setTelephone($data["telephone"] ?? null);
+        $user->setRoles($data['roles'] ?? User::ROLE_DEMANDEUR);
+        $user->setUsername($data['email']);
+        $user->setAdresse($data['adresse'] ?? null);
+        $user->setPrenom($data["prenom"] ?? null);
+        $user->setProfession($data['profession'] ?? null);
+        $user->setEmail($data['email']);
+        $user->setNom($data["nom"] ?? null);
+        $user->setActiveted(false);
+        $user->setEnabled(false);
+        // $resultat = $this->fonctionsService->checkNumeroElecteurExist($cni);
+        $user->setHabitant(false);
+
+        $url = $data['url'] ?? null;
+
+        $errors = $validator->validate($user);
+        if (count($errors) > 0) {
+            return new Response(json_encode(['errors' => (string) $errors]), Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json']);
+        }
+
+        $userRepository->save($user, true);
+        $this->mailService->sendWelcomeMail($user->getEmail(), $user->getTokenActiveted(), $url);
+        return new JsonResponse(
+            ["message" => "Veuillez verifier votre email pour activer votre compte"],
+            Response::HTTP_CREATED,
+            ['Content-Type' => 'application/json']
+        );
+    }
 
     #[Route('/api/verifier-compte/{token}', name: 'api_user_verifier_compte', methods: ['GET'])]
     public function verifierCompte(string $token, UserRepository $userRepository): Response
@@ -203,6 +261,9 @@ class UserController extends AbstractController
         $user->setLieuNaissance($data['lieuNaissance']);
         $user->setDateNaissance(new \DateTime($data['dateNaissance']));
         $user->setNumeroElecteur($data['numeroElecteur'] ?? null);
+        $resultat = $this->fonctionsService->checkNumeroElecteurExist($data['numeroElecteur']);
+        $user->setHabitant($resultat ?? false);
+
         $user->setActiveted(false);
         $user->setEnabled(false);
         $user->setTokenActiveted(bin2hex(random_bytes(32)));
@@ -245,14 +306,17 @@ class UserController extends AbstractController
         );
     }
 
-    // la liste des users
+
     #[Route('/api/users/liste', name: 'api_users_liste', methods: ['GET'])]
     public function listeUser(UserRepository $userRepository): Response
     {
-        $users = $userRepository->findAll();
-        $resultats = [];
+        $users = $userRepository->findBy([
+            'roles' => User::ROLE_DEMANDEUR
+        ]);
 
+        $resultats = [];
         foreach ($users as $user) {
+            // Only include the fields you need, avoid including relationships
             $resultats[] = [
                 'id' => $user->getId(),
                 'nom' => $user->getNom(),
@@ -266,6 +330,7 @@ class UserController extends AbstractController
                 'telephone' => $user->getTelephone(),
                 'dateNaissance' => $user->getDateNaissance(),
                 'lieuNaissance' => $user->getLieuNaissance(),
+                'isHabitant' => $user->isHabitant(),
             ];
         }
         return $this->json($resultats, Response::HTTP_OK);
@@ -288,7 +353,7 @@ class UserController extends AbstractController
     }
 
     // activated-account
-    #[Route('/api/users/activated-account/{token}', name: 'api_user_activated_account', methods: ['GET'])]
+    #[Route('/api/user/activated-account/{token}', name: 'api_user_activated_account', methods: ['GET'])]
     public function activatedAccount($token, UserRepository $userRepository): Response
     {
         $user = $userRepository->findOneBy(['tokenActiveted' => $token]);
@@ -296,7 +361,7 @@ class UserController extends AbstractController
             $user->setActiveted(true);
             $user->setEnabled(true);
             $userRepository->save($user, true);
-            return $this->json('Compte active', Response::HTTP_OK);
+            return $this->json($user->toArray(), Response::HTTP_OK);
         } else {
             return $this->json(['message' => 'Compte non trouvé'], Response::HTTP_BAD_REQUEST);
         }
@@ -377,8 +442,8 @@ class UserController extends AbstractController
 
 
     // methode de reccuperation des données d'un utilisateur
-    #[Route('/api/user/{id}/details', name: 'api_user_show', methods: ['GET'])]
-    public function details($id, UserRepository $userRepository): Response
+    #[Route('/api/user/{id}/details2', name: 'api_user_show_2', methods: ['GET'])]
+    public function details2($id, UserRepository $userRepository, FonctionsService $fonctionsService): Response
     {
         $user = $userRepository->find($id);
         if (!$user)
@@ -394,21 +459,87 @@ class UserController extends AbstractController
             'numeroElecteur' => $user->getNumeroElecteur(),
             'telephone' => $user->getTelephone(),
             'adresse' => $user->getAdresse(),
-            'avatar' => $user->getAvatar(),
             'demandes' => $user->getDemandes(),
             'enabled' => $user->isEnabled(),
+            'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
+            // 'avatar' => $user->getAvatar(),
         ];
         return $this->json($resultat, Response::HTTP_OK);
     }
 
+    #[Route('/api/user/{id}/details', name: 'api_user_show', methods: ['GET'])]
+    public function details($id, UserRepository $userRepository, FonctionsService $fonctionsService): Response
+    {
+        $user = $userRepository->find($id);
+        if (!$user)
+            return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+
+        // Prepare demandes with localite information
+        $demandesArray = [];
+        foreach ($user->getDemandes() as $demande) {
+            $demandeData = [
+                'id' => $demande->getId(),
+                'typeDemande' => $demande->getTypeDemande(),
+                'superficie' => $demande->getSuperficie(),
+                'usagePrevu' => $demande->getUsagePrevu(),
+                'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
+                'statut' => $demande->getStatut(),
+                'dateCreation' => $demande->getDateCreation(),
+                'dateModification' => $demande->getDateModification(),
+                'document' => $demande->getDocument(),
+                'typeDocument' => $demande->getTypeDocument(),
+                'recto' => $demande->getRecto(),
+                'verso' => $demande->getVerso(),
+            ];
+
+            // Add localite information if available
+            if ($demande->getLocalite()) {
+                $localite = $demande->getLocalite();
+                $demandeData['localite'] = [
+                    'id' => $localite->getId(),
+                    'nom' => $localite->getNom(),
+                    'prix' => $localite->getPrix(),
+                    'description' => $localite->getDescription(),
+                    'latitude' => $localite->getLatitude(),
+                    'longitude' => $localite->getLongitude(),
+                ];
+            } else {
+                $demandeData['localite'] = null;
+            }
+
+            $demandesArray[] = $demandeData;
+        }
+
+        $resultat = [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'nom' => $user->getNom(),
+            'activated' => $user->isActiveted(),
+            'prenom' => $user->getPrenom(),
+            'dateNaissance' => $user->getDateNaissance(),
+            'lieuNaissance' => $user->getLieuNaissance(),
+            'numeroElecteur' => $user->getNumeroElecteur(),
+            'telephone' => $user->getTelephone(),
+            'adresse' => $user->getAdresse(),
+            'demandes' => $demandesArray,
+            'enabled' => $user->isEnabled(),
+            'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
+            // 'avatar' => $user->getAvatar(),
+        ];
+
+        return $this->json($resultat, Response::HTTP_OK);
+    }
 
     // la liste des user sauf admin
     #[Route('/api/user/liste', name: 'api_user_list', methods: ['GET'])]
-    public function list(UserRepository $userRepository): Response
+    public function list(UserRepository $userRepository, FonctionsService $fonctionsService): Response
     {
         $users = $userRepository->findAll();
         $resultat = [];
         foreach ($users as $user) {
+            $isHabitant = $this->fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur());
+
+
             $resultat[] = [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -417,15 +548,31 @@ class UserController extends AbstractController
                 'prenom' => $user->getPrenom(),
                 'dateNaissance' => $user->getDateNaissance(),
                 'lieuNaissance' => $user->getLieuNaissance(),
-                'numeroElecteur' => $user->getNumeroElecteur(),
+                'numeroElecteur' => $user->getNumeroElecteur() ?? null,
                 'telephone' => $user->getTelephone(),
                 'adresse' => $user->getAdresse(),
-                'avatar' => $user->getAvatar(),
                 'enabled' => $user->isEnabled(),
                 'activated' => $user->isActiveted(),
-                'demandes' => $user->getDemandes(),
+                'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
+                // 'demandes' => $user->getDemandes(),
+                'demandes' => count($user->getDemandes()),
+                'passwordClaire' => $user->getPasswordClaire(),
+                // 'avatar' => $user->getAvatar(),
             ];
         }
+
+        return $this->json($resultat, Response::HTTP_OK);
+    }
+
+    // get data if the user is habitant
+    #[Route('/api/user/{id}/is-habitant', name: 'api_user_is_habitant', methods: ['GET'])]
+    public function isHabitant($id, UserRepository $userRepository): Response
+    {
+        $user = $userRepository->find($id);
+        if (!$user)
+            return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
+
+        $resultat = $this->fonctionsService->fetchDataElecteur($user->getNumeroElecteur());
 
         return $this->json($resultat, Response::HTTP_OK);
     }
@@ -439,22 +586,19 @@ class UserController extends AbstractController
             return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
         $data = json_decode($request->getContent(), true);
 
-        if ($data['currentPassword'] == $data['newPassword']) {
+        if ($data['currentPassword'] === $data['newPassword']) {
             return $this->json(['message' => 'Le nouveau mot de passe doit différer du mot de passe actuel'], Response::HTTP_BAD_REQUEST);
         }
-        if (!password_verify($data['currentPassword'], $user->getPassword())) {
-            return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
-        }
-        $currentPassword = password_hash($data['currentPassword'], PASSWORD_BCRYPT);
 
-        if ($user->getPassword() != $currentPassword) {
+        if (!password_verify($data['currentPassword'], $user->getPassword())) {
             return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
         }
 
         $newPassword = password_hash($data['newPassword'], PASSWORD_BCRYPT);
         $user->setPassword($newPassword);
+        $user->setPasswordClaire($data['newPassword']);
         $userRepository->save($user, true);
-        return $this->json(['message' => 'Mot de passe mis à jour avec success'], Response::HTTP_OK);
+        return $this->json(['message' => 'Mot de passe mis à jour avec success', 'password' => $data['newPassword'], 'hash' => $user->getPassword()], Response::HTTP_OK);
     }
 
 

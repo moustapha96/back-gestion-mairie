@@ -38,8 +38,8 @@ class ParcelleController extends AbstractController
                 'numero' => $parcelle->getNumero(),
                 'superface' => $parcelle->getSurface(),
                 'statut' => $parcelle->getStatut(),
-                'longitude' => $parcelle->getLongitude(),
-                'latitude' => $parcelle->getLatitude(),
+                'longitude' => $parcelle->getLongitude() ?? 0,
+                'latitude' => $parcelle->getLatitude() ?? 0,
                 'lotissement' => [
                     'id' => $parcelle->getLotissement()->getId(),
                     'nom' => $parcelle->getLotissement()->getNom(),

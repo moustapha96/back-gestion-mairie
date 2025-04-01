@@ -4,6 +4,9 @@ api_platform:
     json: [ 'application/json' ]
     html: [ 'text/html' ]
 
+  eager_loading:
+    max_joins: 50
+
   swagger:
     api_keys:
       JWT:

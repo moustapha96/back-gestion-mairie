@@ -1,56 +1,14 @@
-# security:
-#     enable_authenticator_manager: true
-
-#     password_hashers:
-#         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
-
-#     providers:
-#         users:
-#             entity:
-#                 class: App\Entity\User
-#                 property: email
-#         # used to reload user from session & other features (e.g. switch_user)
-#         app_user_provider:
-#             entity:
-#                 class: App\Entity\User
-#                 property: email
-#     firewalls:
-#         dev:
-#             pattern: ^/(_(profiler|wdt)|css|images|js)/
-#             security: false
-
-#         main:
-#             lazy: true
-#             provider: users
-#             form_login:
-#                 login_path: app_login
-#                 check_path: app_login
-#             logout:
-#                 path: app_logout
-#         api:
-#             pattern: ^/api
-#             stateless: true
-
-#     access_control:
-#         - { path: ^/$, roles: PUBLIC_ACCESS }
-#         - { path: /api/login, roles: PUBLIC_ACCESS }
-#         - { path: ^/api, roles: PUBLIC_ACCESS }
-
-# when@test:
-#     security:
-#         password_hashers:
-#             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-#                 algorithm: auto
-#                 cost: 4 # Lowest possible value for bcrypt
-#                 time_cost: 3 # Lowest possible value for argon
-#                 memory_cost: 10 # Lowest possible value for argon
-
 
 security:
     enable_authenticator_manager: true
 
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+            algorithm: auto
+            cost: 4 # Lowest possible value for bcrypt
+            time_cost: 3 # Lowest possible value for argon
+            memory_cost: 10 # Lowest possible value for argon
+
 
     providers:
         users:
@@ -85,8 +43,10 @@ security:
         - { path: ^/api, roles: PUBLIC_ACCESS }
         - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        
+        - { path: ^/api/user/inscription, roles: PUBLIC_ACCESS }
         - { path: ^/api/users/update-activated-status, roles: PUBLIC_ACCESS }
-        - { path: ^/api/users/activated-account, roles: PUBLIC_ACCESS }
+        - { path: ^/api/user/activated-account, roles: PUBLIC_ACCESS }
         - { path: ^/api/users/create, roles: PUBLIC_ACCESS }
         - { path: ^/api/password-reset, roles: PUBLIC_ACCESS }
         - { path: ^/api/password-reset/new, roles: PUBLIC_ACCESS }

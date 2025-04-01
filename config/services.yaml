@@ -6,6 +6,7 @@
 parameters:
     signature_directory : '%kernel.project_dir%/public/signatures'
     document_directory: '%kernel.project_dir%/public/documents'
+    document_generer_directory: '%kernel.project_dir%/public/generers'
     profile_directory: '%kernel.project_dir%/public/profiles'
     images_directory: '%kernel.project_dir%/public/images'
     plan_directory: '%kernel.project_dir%/public/plans'
@@ -57,6 +58,17 @@ services:
     App\services\FonctionsService:
         autowire: true  
         autoconfigure: true
+
+    App\services\PdfGeneratorService:
+        autowire: true
+        autoconfigure: true
+
+    # App\services\ResetPassworService:
+    #     arguments:
+    #         $userRepository: '@App\Repository\UserRepository'
+    #         $entityManager: '@doctrine.orm.entity_manager'
+    #         $resetPasswordHelper: '@symfonycasts.reset_password.helper'
+    #         $mailer: '@mailer'
 
     # App\EventListener\ResponseListener:
     #     tags:
