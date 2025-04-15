@@ -103,4 +103,39 @@ class DocumentGenereController extends AbstractController
 
         return sprintf('%s_%s_%s_%s', $type, $nom, $prenom, $date);
     }
+
+
+    #[Route('/api/document/{id}/file', name: 'api_document_file_base64', methods: ['GET'])]
+    public function getBase64Document(
+        $id,
+        DocumentGenereRepository $documentGenereRepository
+    ): JsonResponse {
+
+        $document = $documentGenereRepository->find($id);
+
+        if (!$document) {
+            return new JsonResponse(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!$document->getFichier()) {
+            return new JsonResponse(['error' => 'Aucun document généré'], Response::HTTP_NOT_FOUND);
+        }
+
+        $filename = $document->getFichier();
+        $filePath = $this->getParameter('document_generer_directory') . '/' . $filename;
+
+        if (!file_exists($filePath)) {
+            return new JsonResponse(['error' => 'Fichier introuvable sur le serveur'], Response::HTTP_NOT_FOUND);
+        }
+
+        $fileContent = file_get_contents($filePath);
+        $base64 = base64_encode($fileContent);
+
+        return new JsonResponse([
+            'success' => true,
+            'filename' => $filename,
+            'base64' => $base64,
+            'mime_type' => 'application/pdf'
+        ]);
+    }
 }

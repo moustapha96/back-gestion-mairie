@@ -9,6 +9,7 @@ use App\Repository\DocumentGenereRepository;
 use App\Repository\LocaliteRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Dom\Document;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -124,6 +125,8 @@ class DocumentController extends AbstractController
                     'type' => $document->getType(),
                     'dateCreation' => $document->getDateCreation()->format('Y-m-d H:i:s'),
                     'contenu' => $document->getContenu(),
+                    'is_generated' => $document->isGenerated(),
+                    'fichier' => $document->getFichier(),
                     'demande' => [
                         'id' => $demande->getId(),
                         'typeDemande' => $demande->getTypeDemande(),
