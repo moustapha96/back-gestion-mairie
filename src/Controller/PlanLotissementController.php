@@ -22,10 +22,14 @@ class PlanLotissementController extends AbstractController
     {
         $this->em = $em;
     }
+
+
+
+
     #[Route('/api/plan-lotissement/liste', name: 'api_plan_lotissement_list', methods: ['GET'])]
     public function listPlanLotissement(PlanLotissementRepository $planLotissementRepository): Response
     {
-        $plansLotissements = $planLotissementRepository->findAll();
+        $plansLotissements = $planLotissementRepository->findBy([], ['id' => 'DESC']);
         $resultats = [];
         foreach ($plansLotissements as $planLotissement) {
             $resultats[] = [
@@ -217,5 +221,45 @@ class PlanLotissementController extends AbstractController
                 Response::HTTP_OK
             );
         }
+    }
+
+
+
+    #[Route('/api/plan-lotissements', name: 'api_plan_lotissements_paginated', methods: ['GET'])]
+    public function listPaginated(Request $request, PlanLotissementRepository $repo): Response
+    {
+        $page          = (int) $request->query->get('page', 1);
+        $limit         = (int) $request->query->get('limit', 10);
+        $q             = $request->query->get('q'); // recherche
+        $lotissementId = $request->query->get('lotissementId') ? (int) $request->query->get('lotissementId') : null;
+        $sort          = $request->query->get('sort', 'dateCreation'); // id|dateCreation|version|lotissement
+        $dir           = $request->query->get('dir', 'DESC'); // ASC|DESC
+
+        $result = $repo->findPaginated($q, $lotissementId, $page, $limit, $sort, $dir);
+
+        // serialisation simple (toArray)
+        $items = array_map(function ($p) {
+            return [
+                'id'           => $p->getId(),
+                'url'          => $p->getUrl(),
+                'version'      => $p->getVersion(),
+                'description'  => $p->getDescription(),
+                'dateCreation' => $p->getDateCreation()?->format('Y-m-d H:i:s'),
+                'lotissement'  => $p->getLotissement() ? [
+                    'id'  => $p->getLotissement()->getId(),
+                    'nom' => $p->getLotissement()->getNom(),
+                ] : null,
+            ];
+        }, $result['items']);
+
+        return $this->json([
+            'data' => $items,
+            'meta' => [
+                'total' => $result['total'],
+                'page'  => $result['page'],
+                'limit' => $result['limit'],
+                'pages' => $result['pages'],
+            ],
+        ], Response::HTTP_OK);
     }
 }

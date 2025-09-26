@@ -10,7 +10,7 @@ use ApiPlatform\Metadata\ApiResource;
 // #[ApiResource]
 
 #[ORM\Entity(repositoryClass: ConfigurationRepository::class)]
-#[ORM\Table(name: '`adn_configurations`')]
+#[ORM\Table(name: '`gs_mairie_configurations`')]
 class Configuration
 {
     #[ORM\Id]

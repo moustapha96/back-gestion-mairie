@@ -72,6 +72,15 @@ class Parcelle
     #[Groups(['parcelle:list', 'parcelle:item', 'parcelle:write'])]
     private ?float $longitude = null;
 
+    #[ORM\ManyToOne(inversedBy: 'parcelles')]
+    private ?User $proprietaire = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $typeParcelle = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tfDe = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -158,5 +167,41 @@ class Parcelle
             'latitude' => $this->getLatitude(),
             'longitude' => $this->getLongitude(),
         ];
+    }
+
+    public function getProprietaire(): ?User
+    {
+        return $this->proprietaire;
+    }
+
+    public function setProprietaire(?User $proprietaire): static
+    {
+        $this->proprietaire = $proprietaire;
+
+        return $this;
+    }
+
+    public function getTypeParcelle(): ?string
+    {
+        return $this->typeParcelle;
+    }
+
+    public function setTypeParcelle(?string $typeParcelle): static
+    {
+        $this->typeParcelle = $typeParcelle;
+
+        return $this;
+    }
+
+    public function getTfDe(): ?string
+    {
+        return $this->tfDe;
+    }
+
+    public function setTfDe(?string $tfDe): static
+    {
+        $this->tfDe = $tfDe;
+
+        return $this;
     }
 }

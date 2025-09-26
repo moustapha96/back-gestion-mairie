@@ -1,70 +1,128 @@
 {% extends 'base/base-mail.html.twig' %}
-
-{% block title %}Mise à jour de votre rôle
-{% endblock %}
-
-{% block header_title %}Nouveau rôle attribué
-{% endblock %}
-
+{% block title %}Mise à jour de votre rôle{% endblock %}
+{% block header_title %}Nouveau rôle attribué sur la plateforme{% endblock %}
 {% block content %}
-	<p class="greeting">Bonjour
-		{{ user.prenom }}
-		{{ user.nom }},</p>
+    <p class="greeting">Bonjour {{ user.prenom }} {{ user.nom }},</p>
 
-	<div class="message">
-		<p>Nous vous informons que votre rôle sur la plateforme de la Mairie a été mis à jour.</p>
+    <div class="message">
+        <p>Nous vous informons que votre rôle sur la plateforme de gestion de la Mairie de Kaolack a été mis à jour.</p>
 
-		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
-			<h3 style="color: #1E81B0; margin-top: 0;">Nouveau rôle attribué</h3>
-			<p style="font-size: 18px; color: #154C79; margin: 15px 0;">
-				{% if role == 'ROLE_ADMIN' %}
-					<strong>Administrateur</strong>
-				{% elseif role == 'ROLE_AGENT' %}
-					<strong>Agent</strong>
-				{% else %}
-					<strong>Demandeur</strong>
-				{% endif %}
-			</p>
+        {# Section du rôle attribué #}
+        <div style="background-color: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; margin-top: 0;">
+                Votre nouveau rôle : <span style="color: #007bff;">
+                {% if role == 'ROLE_SUPER_ADMIN' %}Super Administrateur
+                {% elseif role == 'ROLE_ADMIN' %}Administrateur
+                {% elseif role == 'ROLE_MAIRE' %}Maire
+                {% elseif role == 'ROLE_CHEF_SERVICE' %}Chef de Service
+                {% elseif role == 'ROLE_PRESIDENT_COMMISSION' %}Président de Commission
+                {% elseif role == 'ROLE_PERCEPTEUR' %}Percepteur
+                {% elseif role == 'ROLE_AGENT' %}Agent
+                {% elseif role == 'ROLE_DEMANDEUR' %}Demandeur
+                {% else %}Utilisateur
+                {% endif %}
+                </span>
+            </h3>
 
-			<h4 style="color: #1E81B0; margin-top: 20px;">Vos nouvelles fonctionnalités :</h4>
-			<ul style="margin-left: 20px;">
-				{% if role == 'ROLE_ADMIN' %}
-					<li>Gestion complète des demandes de terrain</li>
-					<li>Administration des utilisateurs</li>
-					<li>Gestion des paramètres du système</li>
-					<li>Suivi des statistiques et rapports</li>
-					<li>Validation des demandes</li>
-				{% elseif role == 'ROLE_AGENT' %}
-					<li>Traitement des demandes de terrain</li>
-					<li>Gestion des dossiers</li>
-					<li>Suivi des demandeurs</li>
-					<li>Communication avec les utilisateurs</li>
-				{% else %}
-					<li>Dépôt de demandes de terrain</li>
-					<li>Suivi de vos demandes en cours</li>
-					<li>Accès à vos documents</li>
-					<li>Mise à jour de votre profil</li>
-				{% endif %}
-			</ul>
-		</div>
+            <div style="margin-top: 15px;">
+                <h4 style="color: #495057;">Vos nouvelles responsabilités :</h4>
+                <ul style="margin-left: 20px; padding-left: 10px;">
+                    {% if role == 'ROLE_SUPER_ADMIN' %}
+                        <li>Accès complet à toutes les fonctionnalités administratives</li>
+                        <li>Gestion des rôles et permissions de tous les utilisateurs</li>
+                        <li>Configuration avancée du système et des paramètres</li>
+                        <li>Supervision de tous les services et modules de la plateforme</li>
+                        <li>Génération et consultation de tous les rapports</li>
+                        <li>Création et gestion des comptes utilisateurs</li>
+                    {% elseif role == 'ROLE_ADMIN' %}
+                        <li>Gestion des demandes de terrain</li>
+                        <li>Administration des utilisateurs (sauf super-admins)</li>
+                        <li>Validation des demandes et des documents</li>
+                        <li>Gestion des paramètres généraux du système</li>
+                        <li>Suivi des statistiques et génération de rapports</li>
+                        <li>Configuration des workflows et processus</li>
+                    {% elseif role == 'ROLE_MAIRE' %}
+                        <li>Approbation finale des demandes de terrain</li>
+                        <li>Supervision des activités de la mairie</li>
+                        <li>Accès aux rapports et statistiques globales</li>
+                        <li>Validation des décisions importantes</li>
+                        <li>Communication avec les différents services</li>
+                        <li>Participation aux réunions de coordination</li>
+                    {% elseif role == 'ROLE_CHEF_SERVICE' %}
+                        <li>Gestion des agents de votre service</li>
+                        <li>Validation des demandes de votre service</li>
+                        <li>Suivi des dossiers en cours</li>
+                        <li>Communication avec les demandeurs</li>
+                        <li>Génération de rapports pour votre service</li>
+                        <li>Coordination avec les autres chefs de service</li>
+                    {% elseif role == 'ROLE_PRESIDENT_COMMISSION' %}
+                        <li>Présidence des commissions d'attribution</li>
+                        <li>Validation des recommandations</li>
+                        <li>Organisation des réunions de commission</li>
+                        <li>Rédaction des rapports de commission</li>
+                        <li>Communication avec les membres de la commission</li>
+                        <li>Suivi des décisions de la commission</li>
+                    {% elseif role == 'ROLE_PERCEPTEUR' %}
+                        <li>Gestion des paiements et recettes</li>
+                        <li>Émission des quittances et reçus</li>
+                        <li>Suivi des paiements en attente</li>
+                        <li>Communication avec les demandeurs</li>
+                        <li>Génération de rapports financiers</li>
+                        <li>Collaboration avec le service comptable</li>
+                    {% elseif role == 'ROLE_AGENT' %}
+                        <li>Traitement des demandes de terrain</li>
+                        <li>Gestion des dossiers et des parcelles</li>
+                        <li>Suivi des demandeurs</li>
+                        <li>Communication avec les demandeurs</li>
+                        <li>Mise à jour des statuts des demandes</li>
+                        <li>Collaboration avec les chefs de service</li>
+                    {% elseif role == 'ROLE_DEMANDEUR' %}
+                        <li>Dépôt de nouvelles demandes de terrain</li>
+                        <li>Suivi de vos demandes en cours</li>
+                        <li>Accès à vos documents personnels</li>
+                        <li>Mise à jour de votre profil</li>
+                        <li>Consultation des informations publiques</li>
+                        <li>Communication avec les agents</li>
+                    {% else %}
+                        <li>Accès aux informations publiques</li>
+                        <li>Consultation des annonces</li>
+                        <li>Possibilité de contacter le support</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
 
-		<div style="margin-top: 20px; padding: 15px; background-color: #E3F2FD; border: 1px solid #64B5F6; border-radius: 4px;">
-			<p style="margin: 0;">
-				<strong>Action requise :</strong>
-				Pour des raisons de sécurité, veuillez vous déconnecter et vous reconnecter 
-												                pour que les changements prennent effet.
-			</p>
-		</div>
+        {# Section des instructions #}
+        <div style="margin-top: 20px; padding: 15px; background-color: #e9f7fe; border: 1px solid #b8e6ff; border-radius: 5px;">
+            <h4 style="color: #17a2b8; margin-top: 0;">Prochaines étapes :</h4>
+            <ol style="margin-left: 20px; padding-left: 10px;">
+                <li>Déconnectez-vous de la plateforme</li>
+                <li>Reconnectez-vous pour activer votre nouveau rôle</li>
+                <li>Explorez les nouvelles fonctionnalités disponibles</li>
+                {% if role in ['ROLE_SUPER_ADMIN', 'ROLE_ADMIN', 'ROLE_MAIRE', 'ROLE_CHEF_SERVICE', 'ROLE_PRESIDENT_COMMISSION'] %}
+                    <li>Familiarisez-vous avec les nouvelles responsabilités administratives</li>
+                {% endif %}
+            </ol>
+        </div>
 
+        {# Section de sécurité #}
+        <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 5px;">
+            <h4 style="color: #856404; margin-top: 0;">Important - Sécurité :</h4>
+            <p style="margin: 5px 0;">
+                Si vous n'avez pas demandé ce changement de rôle ou si vous suspectez une activité inhabituelle,
+                <strong>contactez immédiatement</strong> notre service support à l'adresse :
+                <a href="mailto:support@kaolackcommune.sn" style="color: #856404;">support@kaolackcommune.sn</a>
+            </p>
+        </div>
 
-		<div style="margin-top: 25px; padding: 15px; background-color: #FFF3E0; border: 1px solid #FFB74D; border-radius: 4px;">
-			<p style="color: #E65100; margin: 0;">
-				<strong>Important :</strong>
-				Si vous n'avez pas demandé ce changement de rôle ou si vous avez des questions, 
-												                veuillez contacter immédiatement l'administrateur de la plateforme.
-			</p>
-		</div>
-	</div>
+        
 
-
+        {# Pied de page #}
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #6c757d;">
+            <p>© {{ "now"|date("Y") }} Mairie de Kaolack - Tous droits réservés</p>
+            <p style="margin: 5px 0 0 0;">
+                <a href="https://kaolackcommune.sn" style="color: #6c757d; text-decoration: none;">Visitez notre site web</a>
+            </p>
+        </div>
+    </div>
 {% endblock %}

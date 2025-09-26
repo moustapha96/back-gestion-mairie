@@ -1,26 +1,23 @@
 {% extends 'base/base-mail.html.twig' %}
-
-{% block title %}Confirmation de votre demande de terrain
+{% block title %}Confirmation de votre demande de terrain et création de votre compte
 {% endblock %}
-
-{% block header_title %}Confirmation de Demande
+{% block header_title %}Confirmation de Demande et Création de Compte
 {% endblock %}
-
 {% block content %}
 	<p class="greeting">Bonjour
 		{{ prenom }}
 		{{ nom }},</p>
 
 	<div class="message">
-		<p>Nous avons bien reçu votre demande de terrain. Voici les détails complets :</p>
+		<p>
+			Nous avons bien reçu votre demande de terrain.
+						            Voici les détails complets de votre demande :
+		</p>
 
 		<div style="background-color: #EEEEE4; padding: 20px; border: 1px solid #76B5C5; border-radius: 4px; margin: 15px 0;">
 			<h3 style="color: #1E81B0; margin-top: 0;">Informations de la demande</h3>
 			<ul style="margin-left: 20px; margin-top: 8px; list-style-type: none; padding: 0;">
-				<li style="margin-bottom: 10px;">
-					<strong>Numéro de la demande :</strong>
-					<span style="color: #154C79;">{{ demande.reference }}</span>
-				</li>
+
 				<li style="margin-bottom: 10px;">
 					<strong>Type de demande :</strong>
 					<span style="color: #154C79;">{{ demande.typeDemande }}</span>
@@ -48,7 +45,7 @@
 				</li>
 				<li style="margin-bottom: 10px;">
 					<strong>Prix estimé :</strong>
-					<span style="color: #154C79;">{{ demande.prix|number_format(0, ',', ' ') }}
+					<span style="color: #154C79;">{{ localite.prix|number_format(0, ',', ' ') }}
 						FCFA</span>
 				</li>
 			</ul>
@@ -63,12 +60,7 @@
 					<strong>Type de document fourni :</strong>
 					<span style="color: #154C79;">{{ demande.typeDocument }}</span>
 				</li>
-				{% if demande.description %}
-					<li style="margin-bottom: 10px;">
-						<strong>Description supplémentaire :</strong><br>
-						<span style="color: #154C79;">{{ demande.description }}</span>
-					</li>
-				{% endif %}
+
 			</ul>
 		</div>
 	</div>
@@ -76,16 +68,32 @@
 	<div class="message" style="margin-top: 20px;">
 		<h3 style="color: #1E81B0;">Prochaines étapes</h3>
 		<ol style="margin-left: 20px; margin-top: 8px;">
-			<li>Votre demande sera examinée par notre service</li>
-			<li>Un agent vous contactera pour plus d'informations si nécessaire</li>
-			<li>Vous recevrez une notification pour chaque étape du processus</li>
+			<li>Votre demande sera examinée par notre service.</li>
+			<li>Un agent vous contactera pour plus d'informations si nécessaire.</li>
+			<li>Vous recevrez une notification pour chaque étape du processus.</li>
 		</ol>
 	</div>
 
-	<p class="message" style="margin-top: 20px; padding: 15px; background-color: #EEEEE4; border-radius: 4px;">
-		<strong>Important :</strong>
-		Conservez le numéro de votre demande pour tout suivi ultérieur.
-	</p>
+	<div class="message" style="margin-top: 20px; padding: 15px; background-color: #EEEEE4; border-radius: 4px;">	
+		<p>
+			Un compte a été créé pour vous sur notre plateforme.
+						            Vous pouvez désormais vous connecter à l’aide de l’adresse e-mail suivante :
+			<strong>{{ userEmail }}</strong>.
+		</p>
+		<p>
+			<strong>Mot de passe temporaire :</strong>
+			<span style="color: #154C79;">password</span><br>
+			Nous vous recommandons de changer votre mot de passe après votre première connexion.
+		</p>
+		<p>
+			<a href="https://glotissement.kaolackcommune.sn/auth/sign-in" style="color: #1E81B0; text-decoration: none; font-weight: bold;">
+
+				Cliquez ici pour vous connecter
+			</a>
+		</p>
+
+	</div>
+
 
 	<p class="message" style="margin-top: 20px;">
 		Pour suivre l'état de votre demande, connectez-vous à votre espace personnel sur notre plateforme.

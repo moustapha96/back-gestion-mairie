@@ -154,3 +154,12 @@ Exécute cette commande avec Composer :
  ----------------------------------------------------------------------------
 
  composer require phpoffice/phpspreadsheet --ignore-platform-req=ext-sodium
+
+
+
+-----------------------------------------------------------------------------
+
+php bin/console doctrine:migrations:diff
+
+php bin/console doctrine:migrations:migrate
+

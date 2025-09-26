@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Permis d'Occuper</title>
+		<style>
+			@page {
+				margin: 15mm;
+				size: A4;
+			}
+
+			body {
+				font-family: 'Times New Roman', serif;
+				font-size: 12px;
+				line-height: 1.4;
+				color: #000;
+				margin: 0;
+				padding: 0;
+			}
+
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				margin-bottom: 20px;
+				border-bottom: 2px solid #000;
+				padding-bottom: 10px;
+			}
+
+			.header-left {
+				flex: 1;
+				text-align: left;
+			}
+
+			.header-right {
+				flex: 1;
+				text-align: right;
+			}
+
+			.logo {
+				width: 60px;
+				height: auto;
+				margin-bottom: 10px;
+			}
+
+			.republic-info {
+				font-weight: bold;
+				font-size: 14px;
+				text-transform: uppercase;
+				margin-bottom: 5px;
+			}
+
+			.region-info {
+				font-size: 12px;
+				margin-bottom: 3px;
+			}
+
+			.reference-box {
+				border: 2px solid #8B4513;
+				padding: 10px;
+				margin: 10px 0;
+				background-color: #f9f9f9;
+			}
+
+			.reference-box p {
+				margin: 0;
+				font-size: 11px;
+			}
+
+			.title {
+				text-align: center;
+				font-size: 36px;
+				font-weight: bold;
+				letter-spacing: 3px;
+				margin: 30px 0;
+				text-transform: uppercase;
+				color: #333;
+				text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+			}
+
+			.content {
+				margin: 20px 0;
+			}
+
+			.info-line {
+				margin: 15px 0;
+				display: flex;
+				align-items: center;
+			}
+
+			.info-icon {
+				width: 30px;
+				height: 30px;
+				border: 2px solid #000;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				margin-right: 15px;
+				font-weight: bold;
+				font-size: 14px;
+				background-color: #f0f0f0;
+			}
+
+			.info-text {
+				flex: 1;
+				font-size: 13px;
+			}
+
+			.dotted-line {
+				border-bottom: 1px dotted #000;
+				display: inline-block;
+				min-width: 200px;
+				margin: 0 5px;
+			}
+
+			.conditions {
+				margin: 20px 0;
+				padding: 10px;
+				border: 1px solid #ccc;
+				background-color: #fafafa;
+			}
+
+			.conditions h4 {
+				margin: 0 0 10px;
+				font-size: 13px;
+				text-decoration: underline;
+			}
+
+			.conditions ol {
+				margin: 0;
+				padding-left: 20px;
+			}
+
+			.conditions li {
+				margin: 8px 0;
+				font-size: 11px;
+				line-height: 1.3;
+			}
+
+			.footer {
+				display: flex;
+				justify-content: space-between;
+				margin-top: 40px;
+				page-break-inside: avoid;
+			}
+
+			.ampliations {
+				flex: 1;
+			}
+
+			.ampliations h4 {
+				text-decoration: underline;
+				margin-bottom: 10px;
+				font-size: 12px;
+			}
+
+			.ampliations ul {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+			}
+
+			.ampliations li {
+				margin: 3px 0;
+				font-size: 11px;
+			}
+
+			.signature {
+				flex: 1;
+				text-align: center;
+			}
+
+			.signature-date {
+				margin-bottom: 10px;
+				font-size: 12px;
+			}
+
+			.signature-title {
+				font-weight: bold;
+				font-size: 14px;
+				margin-top: 60px;
+			}
+
+			.watermark {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%) rotate(-45deg);
+				font-size: 72px;
+				color: rgba(0, 128, 0, 0.1);
+				z-index: -1;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Watermark -->
+		<div class="watermark">COPIE</div>
+
+		<!-- Header -->
+		<div class="header">
+			<div class="header-left">
+				{% if logoSenegal %}
+					<img src="{{ logoSenegal }}" alt="Drapeau du Sénégal" class="logo">
+				{% endif %}
+				<div class="republic-info">République du Sénégal</div>
+				<div class="region-info">Un Peuple - Un But - Une Foi</div>
+				<div class="region-info">***</div>
+				<div class="region-info">
+					<strong>RÉGION DE KAOLACK</strong>
+				</div>
+				<div class="region-info">***</div>
+				<div class="region-info">
+					<strong>COMMUNE DE KAOLACK</strong>
+				</div>
+				{% if logoMairie %}
+					<img src="{{ logoMairie }}" alt="Logo Mairie" class="logo" style="margin-top: 10px;">
+				{% endif %}
+			</div>
+
+			<div class="header-right">
+				<div class="reference-box">
+					<p>Kaolack, le
+						<span class="dotted-line">{{ data.dateDelivrance }}</span>
+					</p>
+					<p>N°
+						<span class="dotted-line">{{ data.document.reference ?? 'C.KL/SG/DDPF 2024' }}</span>
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Title -->
+		<div class="title">Permis d'Occuper</div>
+
+		<!-- Content -->
+		<div class="content">
+			<div class="info-line">
+				<div class="info-icon">P</div>
+				<div class="info-text">
+					Prénom :
+					<span class="dotted-line">
+						<strong>{{ data.beneficiaire.prenom|upper }}</strong>
+					</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">N</div>
+				<div class="info-text">
+					Nom :
+					<span class="dotted-line">
+						<strong>{{ data.beneficiaire.nom|upper }}</strong>
+					</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">📅</div>
+				<div class="info-text">
+					Date et lieu de Naissance :
+					<span class="dotted-line">{{ data.beneficiaire.dateNaissance|date('d/m/Y') }}
+						À
+						{{ data.beneficiaire.lieuNaissance|upper }}</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">🆔</div>
+				<div class="info-text">
+					Numéro Carte Nationale D'identité :
+					<span class="dotted-line">{{ data.cni.numero }}</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">📍</div>
+				<div class="info-text">
+					Délivrée à
+					{{ data.cni.lieuDelivrance }}, le
+					<span class="dotted-line">{{ data.cni.dateDelivrance }}</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">🏠</div>
+				<div class="info-text">
+					Est autorisé à occuper la parcelle lot N°
+					<span class="dotted-line">
+						<strong>{{ data.numeroParcelle }}</strong>
+					</span>
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">📋</div>
+				<div class="info-text">
+					Du plan de lotissement de
+					<span class="dotted-line">
+						<strong>{{ data.lotissement|upper }}</strong>
+					</span>
+					sur le
+				</div>
+			</div>
+
+			<div class="info-line">
+				<div class="info-icon">📄</div>
+				<div class="info-text">
+					{{ data.referenceCadastrale }}, aux conditions suivantes :
+				</div>
+			</div>
+		</div>
+
+		<!-- Conditions -->
+		<div class="conditions">
+			<ol>
+				<li>
+					<strong>L'autorisation est personnelle</strong>
+				</li>
+				<li>
+					<strong>Aucune construction ne peut être entreprise sans autorisation de construction délivrée par les autorités compétentes.</strong>
+				</li>
+				<li>
+					<strong>La Commune de Kaolack se réserve le droit d'une reprise de la parcelle pour des raisons d'intérêt public</strong>
+				</li>
+				<li>
+					<strong>L'attributaire doit effectivement occuper et procéder à la suite, à la mise en valeur de la parcelle dans un délai de deux (02) ans à compter de la date de signature du présent permis d'occuper.</strong>
+				</li>
+				<li>
+					<strong>L'inobservation d'une des conditions sera sanctionnée par le retrait de la parcelle.</strong>
+				</li>
+			</ol>
+		</div>
+
+		<!-- Footer -->
+		<div class="footer">
+			<div class="ampliations">
+				<h4>Ampliations :</h4>
+				<ul>
+					<li>S.G</li>
+					<li>DDPF</li>
+					<li>Intéressé</li>
+					<li>Archives</li>
+					<li>Cadastre</li>
+					<li>Domaine</li>
+				</ul>
+			</div>
+
+			<div class="signature">
+				<div class="signature-date">Fait à Kaolack, le
+					{{ data.dateDelivrance }}</div>
+				<div class="signature-title">Le Maire</div>
+			</div>
+		</div>
+	</body>
+</html>

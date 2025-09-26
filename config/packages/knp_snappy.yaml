@@ -5,3 +5,9 @@ knp_snappy:
     options:    
       encoding: 'UTF-8'
       default-header: false
+      page-size: A4
+      margin-top: 10mm
+      margin-right: 10mm
+      margin-bottom: 10mm
+      margin-left: 10mm
+      enable-local-file-access: true

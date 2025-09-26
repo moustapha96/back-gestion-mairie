@@ -30,7 +30,7 @@ class Lots
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255,nullable: true)]
     private ?string $numeroLot = null;
 
     #[ORM\Column(nullable: true)]
@@ -39,10 +39,10 @@ class Lots
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $typeUsage  = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $statut = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?float $prix = null;
 
     #[ORM\Column(type: "float", nullable: true)]

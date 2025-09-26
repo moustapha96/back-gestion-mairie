@@ -52,6 +52,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const ROLE_DEMANDEUR = 'ROLE_DEMANDEUR';
     const ROLE_ADMIN = "ROLE_ADMIN";
     const ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
+    const ROLE_MAIRE = "ROLE_MAIRE";
+    const ROLE_CHEF_SERVICE = "ROLE_CHEF_SERVICE";
+    const ROLE_PRESIDENT_COMMISSION = "ROLE_PRESIDENT_COMMISSION";
+    const ROLE_PERCEPTEUR = "ROLE_PERCEPTEUR";
+
+
+
+    const SITATION_MATRIMONIALE_CELIBATAIRE = "Célibataire";
+    const SITATION_MATRIMONIALE_MARIE = "Marié(e)";
+    const SITATION_MATRIMONIALE_DIVORCE = "Divorcé(e)";
+    const SITATION_MATRIMONIALE_VEUF = "Veuf(ve)";
+
 
 
     #[ORM\Id]
@@ -67,7 +79,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
     #[ORM\Column]
     private array $roles = [];
-
 
     #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
     #[ORM\Column]
@@ -142,11 +153,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $demandes;
 
 
-
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     #[Groups(['user:item'])]
     private ?Signature $signature = null;
-
 
 
     #[ORM\Column(nullable: true)]
@@ -177,6 +186,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
     private ?FonctionsService $fonctionsService = null;
 
+    #[ORM\OneToMany(mappedBy: 'auteur', targetEntity: Article::class)]
+    private Collection $articles;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $situationMatrimoniale = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $nombreEnfant = null;
+
+    #[ORM\OneToMany(mappedBy: 'proprietaire', targetEntity: Parcelle::class)]
+    private Collection $parcelles;
+
+
     public function __construct(?FonctionsService $fonctionsService = null)
     {
         $this->fonctionsService = $fonctionsService;
@@ -186,6 +208,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($fonctionsService !== null && $this->getNumeroElecteur() !== null) {
             $this->updateHabitantStatus();
         }
+        $this->articles = new ArrayCollection();
+        $this->parcelles = new ArrayCollection();
     }
 
     /**
@@ -278,14 +302,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setRoles(string $roles): static
     {
-
         $this->roles = [];
 
         if (!in_array($roles, [
             self::ROLE_AGENT,
             self::ROLE_DEMANDEUR,
             self::ROLE_ADMIN,
-            self::ROLE_SUPER_ADMIN
+            self::ROLE_SUPER_ADMIN,
+            self::ROLE_MAIRE,
+            self::ROLE_CHEF_SERVICE,
+            self::ROLE_PRESIDENT_COMMISSION,
+            self::ROLE_PERCEPTEUR,
+
         ])) {
             throw new \InvalidArgumentException("Invalid role: " . $roles);
         }
@@ -390,7 +418,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         if (str_contains($this->avatar, "avatars")) {
             $data = file_get_contents($this->getAvatar());
-            $img_code = "data:image/png;base64,{`base64_encode($data)`}";
+            $img_code = 'data:image/png;base64,' . base64_encode($data);
+
             return $img_code;
         } else {
             return $this->avatar;
@@ -668,6 +697,104 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setHabitant(?bool $habitant): static
     {
         $this->habitant = $habitant;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Article>
+     */
+    public function getArticles(): Collection
+    {
+        return $this->articles;
+    }
+
+    public function addArticle(Article $article): static
+    {
+        if (!$this->articles->contains($article)) {
+            $this->articles->add($article);
+            $article->setAuteur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArticle(Article $article): static
+    {
+        if ($this->articles->removeElement($article)) {
+            // set the owning side to null (unless already changed)
+            if ($article->getAuteur() === $this) {
+                $article->setAuteur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getSituationMatrimoniale(): ?string
+    {
+        return $this->situationMatrimoniale;
+    }
+
+    public function setSituationMatrimoniale(?string $situationMatrimoniale): static
+    {
+
+        if (!in_array(
+            $situationMatrimoniale,
+
+            [
+                self::SITATION_MATRIMONIALE_CELIBATAIRE,
+                self::SITATION_MATRIMONIALE_MARIE,
+                self::SITATION_MATRIMONIALE_DIVORCE,
+                self::SITATION_MATRIMONIALE_VEUF,
+            ]
+        )) {
+            throw new \InvalidArgumentException("Type de document invalide: " . $situationMatrimoniale);
+        }
+
+        $this->situationMatrimoniale = $situationMatrimoniale;
+
+        return $this;
+    }
+
+    public function getNombreEnfant(): ?int
+    {
+        return $this->nombreEnfant;
+    }
+
+    public function setNombreEnfant(?int $nombreEnfant): static
+    {
+        $this->nombreEnfant = $nombreEnfant;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Parcelle>
+     */
+    public function getParcelles(): Collection
+    {
+        return $this->parcelles;
+    }
+
+    public function addParcelle(Parcelle $parcelle): static
+    {
+        if (!$this->parcelles->contains($parcelle)) {
+            $this->parcelles->add($parcelle);
+            $parcelle->setProprietaire($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParcelle(Parcelle $parcelle): static
+    {
+        if ($this->parcelles->removeElement($parcelle)) {
+            // set the owning side to null (unless already changed)
+            if ($parcelle->getProprietaire() === $this) {
+                $parcelle->setProprietaire(null);
+            }
+        }
 
         return $this;
     }

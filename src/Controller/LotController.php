@@ -26,7 +26,7 @@ class LotController extends AbstractController
     #[Route('/api/lot/liste', name: 'api_lot_liste', methods: ['GET'])]
     public function listeLot(LotsRepository $lotsRepository): Response
     {
-        $lots = $lotsRepository->findAll();
+        $lots = $lotsRepository->findBy([], ['id' => 'DESC']);
         $resultats = [];
 
         foreach ($lots as $lot) {
@@ -105,7 +105,7 @@ class LotController extends AbstractController
         // Création du lot
         $lot = new Lots();
         $lot->setNumeroLot($data['numeroLot']);
-        $lot->setPrix($data['prix']);
+        $lot->setPrix((float) $data['prix'] );
         $lot->setUsage($data['usage'] ?? null);
         $lot->setSuperficie($data['superficie'] ?? null);
         $lot->setStatut($data['statut']);
@@ -119,7 +119,12 @@ class LotController extends AbstractController
     }
 
     #[Route('/api/lot/{id}/update', name: 'api_lot_update', methods: ['PUT'])]
-    public function updateLot(int $id, Request $request, LotsRepository $lotsRepository): Response
+    public function updateLot(
+        int $id,
+        Request $request,
+        LotissementRepository $lotissementRepository,
+        LotsRepository $lotsRepository
+    ): Response
     {
         $lot = $lotsRepository->find($id);
 
@@ -128,29 +133,38 @@ class LotController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-
+        // dd($data);
         // Mise à jour des informations du lot
-        if (isset($data['numeroLot'])) {
+        if ($data['numeroLot']) {
             $lot->setNumeroLot($data['numeroLot']);
         }
-        if (isset($data['superficie'])) {
-            $lot->setSuperficie($data['superficie']);
+        if ($data['superficie']) {
+            $lot->setSuperficie($data['superficie'] ? $data['superficie'] : null);
         }
-        if (isset($data['usage'])) {
-            $lot->setUsage($data['usage']);
+        if ($data['usage']) {
+            $lot->setUsage($data['usage'] ? $data['usage'] : null);
         }
-        if (isset($data['statut'])) {
+        if ($data['statut']) {
             $lot->setStatut($data['statut']);
         }
-        if (isset($data['prix'])) {
-            $lot->setPrix($data['prix']);
+       
+        if ($data['prix']  ) {
+            $lot->setPrix($data['prix'] ? $data['prix'] : null);
         }
-        if (isset($data['longitude'])) {
-            $lot->setLongitude($data['longitude']);
+        if ($data['longitude']){
+            $lot->setLongitude($data['longitude'] ? $data['longitude'] : null);
         }
-        if (isset($data['latitude'])) {
-            $lot->setLatitude($data['latitude']);
+        if ($data['latitude']) {
+            $lot->setLatitude($data['latitude'] ? $data['latitude'] : null);
         }
+        if ( isset($data['lotissementId']) &&  $data['lotissementId']) {
+            $lotissement = $lotissementRepository->find($data['lotissementId']);
+            if (!$lotissement) {
+                return $this->json(['error' => 'lotissement not found'], Response::HTTP_NOT_FOUND);
+            }
+            $lot->setLotissement($lotissement);
+        }
+
         $this->em->persist($lot);
         $this->em->flush();
 

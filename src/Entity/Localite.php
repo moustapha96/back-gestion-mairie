@@ -30,7 +30,7 @@ class Localite
     #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?string $nom = null;
 
@@ -61,10 +61,14 @@ class Localite
     #[Groups(['localite:list', 'localite:item', 'localite:write', 'demandeur:list'])]
     private Collection $lotissements;
 
+    #[ORM\OneToMany(mappedBy: 'quartier', targetEntity: TitreFoncier::class)]
+    private Collection $titreFonciers;
+
     public function __construct()
     {
         $this->demandes = new ArrayCollection();
         $this->lotissements = new ArrayCollection();
+        $this->titreFonciers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -196,6 +200,36 @@ class Localite
             // set the owning side to null (unless already changed)
             if ($lotissement->getLocalite() === $this) {
                 $lotissement->setLocalite(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TitreFoncier>
+     */
+    public function getTitreFonciers(): Collection
+    {
+        return $this->titreFonciers;
+    }
+
+    public function addTitreFoncier(TitreFoncier $titreFoncier): static
+    {
+        if (!$this->titreFonciers->contains($titreFoncier)) {
+            $this->titreFonciers->add($titreFoncier);
+            $titreFoncier->setQuartier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTitreFoncier(TitreFoncier $titreFoncier): static
+    {
+        if ($this->titreFonciers->removeElement($titreFoncier)) {
+            // set the owning side to null (unless already changed)
+            if ($titreFoncier->getQuartier() === $this) {
+                $titreFoncier->setQuartier(null);
             }
         }
 

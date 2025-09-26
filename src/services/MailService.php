@@ -62,7 +62,7 @@ class MailService extends AbstractController
 
     private function getEmailSender(): Address
     {
-        $emailbase = $this->config->get("email") ?? "moustaphakhouma965@gmail.com";
+        $emailbase = $this->config->get("email") ?? "alhusseinkhouma0@gmail.com";
         $nombase = $this->config->get("titre") ?? "Gestion de la mairie";
         return new Address($emailbase, $nombase);
     }
@@ -93,10 +93,13 @@ class MailService extends AbstractController
         }
     }
 
-    public function sendDemandeMail(DemandeTerrain $demande): string
+
+
+    public function sendConfirmationDemande(DemandeTerrain $demande): string
     {
         try {
             $emailSend = (new TemplatedEmail())
+
                 ->from($this->getEmailSender())
                 ->to($demande->getUtilisateur()->getEmail())
                 ->subject("Confirmation de votre demande de terrain")
@@ -105,13 +108,37 @@ class MailService extends AbstractController
                     'demande' => $demande,
                     'nom' => $demande->getUtilisateur()->getNom(),
                     'prenom' => $demande->getUtilisateur()->getPrenom(),
-                    'localite' => $demande->getLocalite()
+                'localite' => $demande->getLocalite(),
+                'userEmail' => $demande->getUtilisateur()->getEmail(),
                 ]);
             $this->mailer->send($emailSend);
-
             return "Email de confirmation envoyé avec succès !";
         } catch (\Throwable $th) {
             return $th->getMessage();
+        }
+    }
+
+
+
+    public function sendDemandeMail(DemandeTerrain $demande): string
+    {
+        try {
+            $emailSend = (new TemplatedEmail())
+                ->from($this->getEmailSender())
+                ->to($demande->getUtilisateur()->getEmail())
+                ->subject("Confirmation de votre demande de terrain")
+                ->htmlTemplate('nouveau_email/compte-existant-demande-confirmation.html.twig')
+                ->context([
+                    'demande' => $demande,
+                    'nom' => $demande->getUtilisateur()->getNom(),
+                    'prenom' => $demande->getUtilisateur()->getPrenom(),
+                    'localite' => $demande->getLocalite(),
+                    'userEmail' => $demande->getUtilisateur()->getEmail(),
+                ]);
+            $this->mailer->send($emailSend);
+            return "Email de confirmation envoyé avec succès pour le user existant!";
+        } catch (\Throwable $th) {
+            return "Erreur lors de l'envoi de l'email de confirmation ";
         }
     }
 
@@ -149,7 +176,7 @@ class MailService extends AbstractController
                     'user' => $user,
                     'password' => $password,
                     'token' => $user->getTokenActiveted(),
-                    'activationUrl' => sprintf('%s/activate?token=%s', 'http://localhost:8000', $user->getTokenActiveted()),
+                'activationUrl' => sprintf('%s/activate?token=%s', 'https://glotissement.kaolackcommune.sn/', $user->getTokenActiveted()),
                     'name' => $user->getUsername(),
                     'prenom' => $user->getPrenom(),
                     'nom' => $user->getNom(),

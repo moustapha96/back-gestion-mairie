@@ -52,9 +52,11 @@ class AuthenticationSuccessListener
                 'lieuNaissance' => $user->getLieuNaissance(),
                 'dateNaissance' => $user->getDateNaissance(),
                 'numeroElecteur' => $user->getNumeroElecteur(),
-                'signature' => $user->getSignature() ? $user->getSignature()->toArray() : null,
-                'demande' => $demandes,
+                'demande' => count($demandes) ,
                 'habitant' => $user->isHabitant(),
+                'situationMatrimoniale' => $user->getSituationMatrimoniale() ?? null,
+                'nombreEnfant' => $user->getNombreEnfant() ?? 0,
+                'parcelles' => count($user->getParcelles())
             ];
         }
 

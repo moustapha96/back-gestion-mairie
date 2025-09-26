@@ -25,7 +25,7 @@ class LotissementController extends AbstractController
     #[Route('/api/lotissement/liste', name: 'api_lotissement_liste', methods: ['GET'])]
     public function listeLotissement(LotissementRepository $lotissementRepository): Response
     {
-        $lotissements = $lotissementRepository->findAll();
+        $lotissements = $lotissementRepository->findBy([], ['id' => 'DESC']);
         $resultats = [];
 
         foreach ($lotissements as $lotissement) {

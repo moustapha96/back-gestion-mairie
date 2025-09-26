@@ -15,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ParcelleController extends AbstractController
 {
@@ -29,7 +30,7 @@ class ParcelleController extends AbstractController
     #[Route('/api/parcelle/liste', name: 'api_Parcelle_liste', methods: ['GET'])]
     public function listeParcelle(ParcelleRepository $parcellesRepository): Response
     {
-        $parcelles = $parcellesRepository->findAll();
+        $parcelles = $parcellesRepository->findBy([], ['id' => 'DESC']);
         $resultats = [];
 
         foreach ($parcelles as $parcelle) {
@@ -104,7 +105,7 @@ class ParcelleController extends AbstractController
         // Création de la Parcelle
         $parcelle = new Parcelle();
         $parcelle->setNumero($data['numero']);
-        $parcelle->setSurface($data['superface']);
+        $parcelle->setSurface($data['surface']);
         $parcelle->setStatut($data['statut']);
         $parcelle->setLotissement($lotissement);
 
@@ -122,8 +123,12 @@ class ParcelleController extends AbstractController
     }
 
     #[Route('/api/parcelle/{id}/update', name: 'api_parcelle_update', methods: ['PUT'])]
-    public function updateParcelle(int $id, Request $request, LotissementRepository $lotissementRepository, ParcelleRepository $parcelleRepository): Response
-    {
+    public function updateParcelle(
+        int $id,
+        Request $request,
+        LotissementRepository $lotissementRepository,
+        ParcelleRepository $parcelleRepository
+    ): Response {
         $parcelle = $parcelleRepository->find($id);
 
         if (!$parcelle) {
@@ -136,15 +141,15 @@ class ParcelleController extends AbstractController
         if (isset($data['numero'])) {
             $parcelle->setNumero($data['numero']);
         }
-        if (isset($data['lotissement']['id'])) {
-            $lotissement = $lotissementRepository->find($data['lotissement']['id']);
+        if (isset($data['lotissementId'])) {
+            $lotissement = $lotissementRepository->find($data['lotissementId']);
             if (!$lotissement) {
                 return $this->json(['error' => 'lotissement not found'], Response::HTTP_NOT_FOUND);
             }
             $parcelle->setLotissement($lotissement);
         }
-        if (isset($data['superface'])) {
-            $parcelle->setSurface($data['superface']);
+        if (isset($data['surface'])) {
+            $parcelle->setSurface($data['surface']);
         }
         if (isset($data['statut'])) {
             $parcelle->setStatut($data['statut']);
@@ -214,5 +219,105 @@ class ParcelleController extends AbstractController
             ];
         }
         return $this->json($resultats, 200);
+    }
+
+
+
+    #[Route('/api/users/{id}/parcelles', name: 'user_parcelles_paginated', methods: ['GET'])]
+    public function listByUser(
+        int $id,
+        Request $request,
+        ParcelleRepository $repo,
+        NormalizerInterface $normalizer
+    ): Response {
+        $page = (int) $request->query->get('page', 1);
+        $size = (int) $request->query->get('size', 10);
+        $sort = $request->query->get('sort', 'id,DESC');
+        $search = $request->query->get('search');
+        $statut = $request->query->get('statut');
+        $typeParcelle = $request->query->get('typeParcelle');
+        $lotissementId = $request->query->get('lotissementId');
+
+        $result = $repo->findPaginatedByUser(
+            userId: $id,
+            page: $page,
+            size: $size,
+            search: $search ?: null,
+            statut: $statut ?: null,
+            lotissementId: $lotissementId ? (int) $lotissementId : null,
+            typeParcelle: $typeParcelle ?: null,
+            sort: $sort ?: null,
+        );
+
+        // Normaliser avec les groups définis sur l’entité
+        $data = $normalizer->normalize($result['data'], null, ['groups' => ['parcelle:list', 'parcelle:item']]);
+
+        return $this->json([
+            'data' => $data,
+            'meta' => $result['meta'],
+        ]);
+    }
+
+
+
+    #[Route('/api/parcelles-paginated', name: 'parcelles_paginated', methods: ['GET'])]
+    public function listPaginated(
+        Request $request,
+        ParcelleRepository $repo,
+        NormalizerInterface $normalizer
+    ): Response {
+        $page = (int) $request->query->get('page', 1);
+        $size = (int) $request->query->get('size', 10);
+        $sort = $request->query->get('sort', 'id,DESC');
+        $search = $request->query->get('search');
+        $statut = $request->query->get('statut');
+        $typeParcelle = $request->query->get('typeParcelle');
+        $lotissementId = $request->query->get('lotissementId');
+
+        $result = $repo->findPaginated(
+            page: $page,
+            size: $size,
+            search: $search ?: null,
+            statut: $statut ?: null,
+            lotissementId: $lotissementId ? (int) $lotissementId : null,
+            typeParcelle: $typeParcelle ?: null,
+            sort: $sort ?: null,
+        );
+
+        // Normalise avec les Groups définis sur l'entité
+        $data = $normalizer->normalize($result['data'], null, [
+            'groups' => ['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item']
+        ]);
+
+        return $this->json([
+            'data' => $data,
+            'meta' => $result['meta'],
+        ]);
+    }
+
+    #[Route('/api/parcelles/{id}/statut', name: 'parcelle_update_statut', methods: ['PATCH'])]
+    public function updateStatut(
+        int $id,
+        Request $request,
+        ParcelleRepository $repo,
+        NormalizerInterface $normalizer
+    ): Response {
+
+        $parcelle = $repo->find($id);
+        if (!$parcelle) {
+            return $this->json(['message' => 'Parcelle non trouvée'], 404);
+        }
+
+        $payload = json_decode($request->getContent(), true) ?: [];
+        $statut = $payload['statut'] ?? null;
+        if (!$statut) {
+            return $this->json(['message' => 'Statut manquant'], 400);
+        }
+
+        $parcelle->setStatut($statut);
+        $this->em->flush();
+
+        $data = $normalizer->normalize($parcelle, null, ['groups' => ['parcelle:item', 'parcelle:list']]);
+        return $this->json($data);
     }
 }

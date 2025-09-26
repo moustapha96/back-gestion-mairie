@@ -31,27 +31,35 @@ class Lotissement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?string $localisation = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?string $description = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255 ,  nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?string $statut = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?\DateTimeInterface $dateCreation = null;
 
     #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?float $latitude = null;
 
     #[ORM\Column(type: "float", nullable: true)]
+    #[Groups(['parcelle:list', 'parcelle:item', 'lotissement:list', 'lotissement:item'])]
     private ?float $longitude = null;
 
     /**
@@ -65,7 +73,7 @@ class Lotissement
      */
     #[ORM\OneToMany(targetEntity: Lots::class, mappedBy: 'lotissement')]
 
-    #[Groups(['lotissement:item', 'lotissement:list'])]
+    #[Groups(['lotissement:item'])]
     private Collection $lots;
 
     #[ORM\OneToMany(mappedBy: 'lotissement', targetEntity: Parcelle::class)]
@@ -256,7 +264,7 @@ class Lotissement
             'planLotissements' => array_map(function ($planLotissement) {
                 return $planLotissement->toArray();
             }, $this->getPlanLotissements()->toArray()),
-            'lots' => $this->getLots() ?  $this->getLots()->toArray() : null,
+            'lots' => $this->getLots() ? $this->getLots()->toArray() : null,
             'localite' => $this->getLocalite() ? $this->getLocalite()->toArray() : null,
             'latitude' => $this->getLatitude(),
             'longitude' => $this->getLongitude(),

@@ -29,20 +29,35 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
     ],
     denormalizationContext: ['groups' => ['demande:write']],
     order: ["id" => "DESC"],
-    paginationEnabled: false,
+    paginationEnabled: true,
+    paginationItemsPerPage: 10,
+    paginationMaximumItemsPerPage: 50,
+    paginationClientEnabled: true,
+    paginationClientItemsPerPage: true,
 )]
 #[ORM\Table(name: '`gs_mairie_demande_terrains`')]
 class DemandeTerrain
 {
 
-    const PERMIS_OCCUPATION = 'PERMIS_OCCUPATION';
-    const BAIL_COMMUNAL = 'BAIL_COMMUNAL';
-    const CALCUL_REDEVANCE = 'CALCUL_REDEVANCE';
-    const PROPOSITION_BAIL = 'PROPOSITION_BAIL';
-    const STATUT_REJETE = 'REJETE';
-    const STATUT_VALIDE = 'VALIDE';
-    const STATUT_EN_COURS = 'EN_COURS';
-    const STATUT_EN_TRAITEMENT = 'EN_TRAITEMENT';
+
+    const STATUT_REJETE = 'Rejetée';
+    const STATUT_APPROUVE = 'Approuvée';
+    const STATUT_EN_ATTENTE = 'En attente';
+    const STATUT_EN_COURS_TRAITEMENT = 'En cours de traitement';
+
+
+    const PERMIS_OCCUPATION  = "Permis d'occuper";
+    const BAIL_COMMUNAL = "Bail communal";
+    const PROPOSITION_BAIL = "Proposition de bail";
+    const TRANSFERT_DEFINITIF = "Transfert définitif";
+
+
+    const TYPE_DEMANDE_ATTRIBUTION = "Attribution";
+    const TYPE_DEMANDE_REGULARISATION = "Régularisation";
+    const TYPE_DEMANDE_AUTHENTIFICATION = "Authentification";
+
+
+
 
     #[ORM\Id]
     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
@@ -116,10 +131,48 @@ class DemandeTerrain
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $verso = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?string $typeTitre = null;
+
+
+
+    // Ajoutez ces propriétés dans la classe
+    #[ORM\ManyToOne(targetEntity: NiveauValidation::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['demande:list', 'demande:item', 'demande:write'])]
+    private ?NiveauValidation $niveauValidationActuel = null;
+
+    #[ORM\OneToMany(mappedBy: 'demande', targetEntity: HistoriqueValidation::class)]
+    #[Groups(['demande:item'])]
+    private Collection $historiqueValidations;
+
+    #[ORM\Column(nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]   
+    private ?bool $terrainAKaolack = null;
+
+    #[ORM\Column(nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?bool $terrainAilleurs = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?string $decisionCommission = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?string $rapport = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+     #[Groups(['demande:list', 'demande:item', 'demande:write', 'user:item', 'user:list', 'localite:item', 'localite:list'])]
+    private ?string $recommandation = null;
 
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
+        $this->historiqueValidations = new ArrayCollection();
+        $this->statut = self::STATUT_EN_ATTENTE;
+
     }
 
     public function getId(): ?int
@@ -134,9 +187,6 @@ class DemandeTerrain
 
     public function setTypeDemande(string $typeDemande): static
     {
-        if (!in_array($typeDemande, [self::PERMIS_OCCUPATION, self::BAIL_COMMUNAL, self::CALCUL_REDEVANCE, self::PROPOSITION_BAIL])) {
-            throw new \InvalidArgumentException("Type de document invalide: " . $typeDemande);
-        }
         $this->typeDemande = $typeDemande;
         return $this;
     }
@@ -184,7 +234,12 @@ class DemandeTerrain
 
     public function setStatut(?string $statut): static
     {
-        if (!in_array($statut, [self::STATUT_EN_COURS, self::STATUT_EN_TRAITEMENT, self::STATUT_REJETE, self::STATUT_VALIDE])) {
+        if (!in_array($statut, [
+            self::STATUT_EN_ATTENTE,
+            self::STATUT_EN_COURS_TRAITEMENT,
+            self::STATUT_REJETE,
+            self::STATUT_APPROUVE
+        ])) {
             throw new \InvalidArgumentException("Statut de la demande invalide: " . $statut);
         }
         $this->statut = $statut;
@@ -241,10 +296,8 @@ class DemandeTerrain
 
     public function getDocumentGenerer(): ?DocumentGenere
     {
-        return $this->documentGenerer;
+        return $this->documentGenerer ? $this->documentGenerer : null;
     }
-
-
 
     public function getLocalite(): ?Localite
     {
@@ -347,6 +400,118 @@ class DemandeTerrain
     public function setMotifRefus(?string $motif_refus): static
     {
         $this->motif_refus = $motif_refus;
+
+        return $this;
+    }
+
+
+    public function getTypeTitre(): ?string
+    {
+        return $this->typeTitre;
+    }
+
+    public function setTypeTitre(?string $typeTitre): static
+    {
+        if (!in_array(
+            $typeTitre,
+
+            [
+                self::PERMIS_OCCUPATION,
+                self::BAIL_COMMUNAL,
+                self::TRANSFERT_DEFINITIF,
+                self::PROPOSITION_BAIL,
+            ]
+        )) {
+            throw new \InvalidArgumentException("Type de document invalide: " . $typeTitre);
+        }
+
+        $this->typeTitre = $typeTitre;
+        return $this;
+    }
+
+    // Ajoutez ces getters/setters
+    public function getNiveauValidationActuel(): ?NiveauValidation
+    {
+        return $this->niveauValidationActuel;
+    }
+
+    public function setNiveauValidationActuel(?NiveauValidation $niveauValidationActuel): static
+    {
+        $this->niveauValidationActuel = $niveauValidationActuel;
+        return $this;
+    }
+
+    public function getHistoriqueValidations(): Collection
+    {
+        return $this->historiqueValidations;
+    }
+
+    public function addHistoriqueValidation(HistoriqueValidation $historiqueValidation): static
+    {
+        if (!$this->historiqueValidations->contains($historiqueValidation)) {
+            $this->historiqueValidations->add($historiqueValidation);
+            $historiqueValidation->setDemande($this);
+        }
+        return $this;
+    }
+
+    public function isTerrainAKaolack(): ?bool
+    {
+        return $this->terrainAKaolack;
+    }
+
+    public function setTerrainAKaolack(?bool $terrainAKaolack): static
+    {
+        $this->terrainAKaolack = $terrainAKaolack;
+
+        return $this;
+    }
+
+    public function isTerrainAilleurs(): ?bool
+    {
+        return $this->terrainAilleurs;
+    }
+
+    public function setTerrainAilleurs(?bool $terrainAilleurs): static
+    {
+        $this->terrainAilleurs = $terrainAilleurs;
+
+        return $this;
+    }
+
+
+    public function getDecisionCommission(): ?string
+    {
+        return $this->decisionCommission;
+    }
+
+    public function setDecisionCommission(?string $decisionCommission): static
+    {
+        $this->decisionCommission = $decisionCommission;
+
+        return $this;
+    }
+
+    public function getRapport(): ?string
+    {
+        return $this->rapport;
+    }
+
+    public function setRapport(?string $rapport): static
+    {
+        $this->rapport = $rapport;
+
+        return $this;
+    }
+
+    public function getRecommandation(): ?string
+    {
+        return $this->recommandation;
+    }
+
+    public function setRecommandation(?string $recommandation): static
+    {
+        $this->recommandation = $recommandation;
 
         return $this;
     }

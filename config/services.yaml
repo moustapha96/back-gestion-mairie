@@ -21,6 +21,10 @@ services:
     App\Controller\:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
+    
+    App\Repository\:
+        resource: '../src/Repository'
+        tags: ['doctrine.repository_service']
 
     App\:
         resource: '../src/'

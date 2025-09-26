@@ -1,6 +1,6 @@
 
 security:
-    enable_authenticator_manager: true
+    # enable_authenticator_manager: true
 
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
@@ -56,10 +56,16 @@ security:
         - { path: ^/api/logout, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/demande/nouvelle-demande , roles: PUBLIC_ACCESS }
         - { path: ^/api/localite/liste-web , roles: PUBLIC_ACCESS }
+        - { path: ^/api/articles , roles: PUBLIC_ACCESS }
+          
           
     role_hierarchy:
         ROLE_SUPER_ADMIN: ROLE_SUPER_ADMIN
         ROLE_ADMIN: ROLE_ADMIN
+        ROLE_MAIRE: ROLE_MAIRE
+        ROLE_CHEF_SERVICE: ROLE_CHEF_SERVICE
+        ROLE_PRESIDENT_COMMISSION: ROLE_PRESIDENT_COMMISSION
+        ROLE_PERCEPTEUR: ROLE_PERCEPTEUR
         ROLE_AGENT: ROLE_AGENT
         ROLE_DEMANDEUR: ROLE_DEMANDEUR
 

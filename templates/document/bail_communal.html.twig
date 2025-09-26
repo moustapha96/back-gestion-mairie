@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bail Communal</title>
+    <style>
+        @page {
+            margin: 15mm;
+            size: A4;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        
+        .header-left {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .header-right {
+            flex: 1;
+            text-align: right;
+        }
+        
+        .logo {
+            width: 60px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        .republic-info {
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .region-info {
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        
+        .reference-box {
+            border: 2px solid #8B4513;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 30px 0;
+            text-transform: uppercase;
+            color: #333;
+        }
+        
+        .content {
+            margin: 20px 0;
+            text-align: justify;
+        }
+        
+        .article {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #0066cc;
+            background-color: #f8f9fa;
+        }
+        
+        .article-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0066cc;
+        }
+        
+        .dotted-line {
+            border-bottom: 1px dotted #000;
+            display: inline-block;
+            min-width: 150px;
+            margin: 0 3px;
+        }
+        
+        .amount {
+            font-weight: bold;
+            color: #d9534f;
+            font-size: 14px;
+        }
+        
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            page-break-inside: avoid;
+        }
+        
+        .signature {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .signature-date {
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .signature-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            {% if logoSenegal %}
+                <img src="{{ logoSenegal }}" alt="Drapeau du Sénégal" class="logo">
+            {% endif %}
+            <div class="republic-info">République du Sénégal</div>
+            <div class="region-info">Un Peuple - Un But - Une Foi</div>
+            <div class="region-info">***</div>
+            <div class="region-info"><strong>RÉGION DE KAOLACK</strong></div>
+            <div class="region-info">***</div>
+            <div class="region-info"><strong>COMMUNE DE KAOLACK</strong></div>
+            {% if logoMairie %}
+                <img src="{{ logoMairie }}" alt="Logo Mairie" class="logo" style="margin-top: 10px;">
+            {% endif %}
+        </div>
+        
+        <div class="header-right">
+            <div class="reference-box">
+                <p>Kaolack, le <span class="dotted-line">{{ data.dateDelivrance|date('d/m/Y') }}</span></p>
+                <p>N° <span class="dotted-line">{{ data.numeroBail ?? 'BC-2024-001' }}</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Title -->
+    <div class="title">Bail Communal</div>
+    
+    <!-- Content -->
+    <div class="content">
+        <p>Entre la <strong>COMMUNE DE KAOLACK</strong>, représentée par son Maire, Monsieur <strong>[NOM DU MAIRE]</strong>, d'une part,</p>
+        
+        <p>Et <strong>{{ data.beneficiaire.prenom|upper }} {{ data.beneficiaire.nom|upper }}</strong>, né(e) le {{ data.beneficiaire.dateNaissance|date('d/m/Y') }} à {{ data.beneficiaire.lieuNaissance }}, titulaire de la CNI N° {{ data.cni.numero }}, d'autre part,</p>
+        
+        <p><strong>IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :</strong></p>
+        
+        <div class="article">
+            <div class="article-title">ARTICLE 1 : OBJET DU BAIL</div>
+            <p>La Commune de Kaolack donne à bail à {{ data.beneficiaire.prenom }} {{ data.beneficiaire.nom }}, qui accepte, la parcelle lot N° <strong>{{ data.numeroParcelle }}</strong> du lotissement <strong>{{ data.lotissement }}</strong>, d'une superficie de <strong>{{ data.superficie }} m²</strong>, destinée à un usage <strong>{{ data.usagePrevu }}</strong>.</p>
+        </div>
+        
+        <div class="article">
+            <div class="article-title">ARTICLE 2 : DURÉE</div>
+            <p>Le présent bail est consenti pour une durée de <strong>{{ ((data.dateFin|date('Y') - data.dateDebut|date('Y'))) }} an(s)</strong>, à compter du {{ data.dateDebut|date('d/m/Y') }} et prenant fin le {{ data.dateFin|date('d/m/Y') }}.</p>
+        </div>
+        
+        <div class="article">
+            <div class="article-title">ARTICLE 3 : LOYER</div>
+            <p>Le loyer annuel est fixé à <span class="amount">{{ data.montantLocation|number_format(0, ',', ' ') }} FCFA</span>, payable par trimestre anticipé.</p>
+            <p>Une caution de <span class="amount">{{ data.montantCaution|number_format(0, ',', ' ') }} FCFA</span> (équivalent à 3 mois de loyer) est exigée à la signature du présent bail.</p>
+        </div>
+        
+        <div class="article">
+            <div class="article-title">ARTICLE 4 : OBLIGATIONS DU PRENEUR</div>
+            <p>Le preneur s'engage à :</p>
+            <ul>
+                <li>Payer régulièrement le loyer aux échéances convenues</li>
+                <li>Utiliser la parcelle conformément à sa destination</li>
+                <li>Entretenir la parcelle en bon état</li>
+                <li>Respecter les règlements d'urbanisme en vigueur</li>
+                <li>Ne pas sous-louer sans autorisation écrite de la Commune</li>
+            </ul>
+        </div>
+        
+        <div class="article">
+            <div class="article-title">ARTICLE 5 : RÉSILIATION</div>
+            <p>Le présent bail pourra être résilié de plein droit en cas de non-paiement du loyer, de non-respect des obligations du preneur, ou pour cause d'utilité publique.</p>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <div class="signature" style="text-align: left;">
+            <div class="signature-date">Le Preneur</div>
+            <div class="signature-title">{{ data.beneficiaire.prenom|upper }} {{ data.beneficiaire.nom|upper }}</div>
+        </div>
+        
+        <div class="signature">
+            <div class="signature-date">Fait à Kaolack, le {{ data.dateDelivrance|date('d/m/Y') }}</div>
+            <div class="signature-title">Le Maire</div>
+        </div>
+    </div>
+</body>
+</html>

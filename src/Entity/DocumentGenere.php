@@ -137,9 +137,6 @@ class DocumentGenere
         return $this;
     }
 
-
-
-
     public function getDemandeTerrain(): ?DemandeTerrain
     {
         return $this->demandeTerrain;

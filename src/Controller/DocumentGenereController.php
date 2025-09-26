@@ -28,17 +28,18 @@ class DocumentGenereController extends AbstractController
     }
 
 
-    #[Route('/api/document/{id}/generate', name: 'api_document_generate', methods: ['POST'])]
     public function generateDocument(
-        Request $request,
         $id,
+        Request $request,
         DemandeTerrainRepository $demandeTerrainRepository,
         DocumentGenereRepository $documentGenereRepository
+
     ): JsonResponse {
         $demande = $demandeTerrainRepository->find($id);
         if (!$demande) {
             return new JsonResponse(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
         }
+
         // Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
         if (!$data) {
@@ -47,9 +48,8 @@ class DocumentGenereController extends AbstractController
 
         // Générer un nom de fichier unique
         $filename = $this->generateFilename($data);
-
-        $logoMairiePath = $this->getParameter('kernel.project_dir') . '/public/logo/logo_mairie.png';
-        $logoSenegalPath = $this->getParameter('kernel.project_dir') . '/public/logo/logo_senegal.png';
+        $logoMairiePath = $this->getParameter('kernel.project_dir') . 'https://glotissement.kaolackcommune.sn/logo.png';
+        $logoSenegalPath = $this->getParameter('kernel.project_dir') . 'https://glotissement.kaolackcommune.sn/logo.png';
 
         // Générer le contenu HTML pour le PDF
         $html = $this->renderView('document/template.html.twig', [
@@ -105,7 +105,7 @@ class DocumentGenereController extends AbstractController
     }
 
 
-    #[Route('/api/document/{id}/file', name: 'api_document_file_base64', methods: ['GET'])]
+    // #[Route('/api/document/{id}/file', name: 'api_document_file_base64', methods: ['GET'])]
     public function getBase64Document(
         $id,
         DocumentGenereRepository $documentGenereRepository
