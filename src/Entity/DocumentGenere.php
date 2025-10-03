@@ -4,9 +4,6 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\DocumentGenereRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -59,15 +56,6 @@ class DocumentGenere
     #[Groups(['document:read'])]
     private ?\DateTimeInterface $dateCreation = null;
 
-    // #[ORM\OneToOne(mappedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
-    // #[ORM\JoinColumn(nullable: false)]
-    // #[Groups(['document:read'])]
-    // private ?DemandeTerrain $demandeTerrain = null;
-
-    #[ORM\OneToOne(inversedBy: 'documentGenerer', targetEntity: DemandeTerrain::class, cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['document:read'])]
-    private ?DemandeTerrain $demandeTerrain = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['document:read'])]
@@ -134,17 +122,6 @@ class DocumentGenere
     {
         $this->dateCreation = $dateCreation;
 
-        return $this;
-    }
-
-    public function getDemandeTerrain(): ?DemandeTerrain
-    {
-        return $this->demandeTerrain;
-    }
-
-    public function setDemandeTerrain(?DemandeTerrain $demandeTerrain): static
-    {
-        $this->demandeTerrain = $demandeTerrain;
         return $this;
     }
 

@@ -1,6 +1,5 @@
 <?php
 
-// src/Controller/UserController.php
 
 namespace App\Controller;
 
@@ -18,6 +17,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Entity\Request as Demande;
+use Doctrine\ORM\EntityManagerInterface;
 
 class UserController extends AbstractController
 {
@@ -26,25 +27,32 @@ class UserController extends AbstractController
     private $mailService;
     private $fonctionsService;
 
-    public function __construct(Security $security, MailService $mailService, FonctionsService $fonctionsService)
-    {
+    public function __construct(
+        Security $security,
+        private string $fileBaseUrl,
+        MailService $mailService,
+        FonctionsService $fonctionsService
+    ) {
         $this->security = $security;
         $this->mailService = $mailService;
         $this->fonctionsService = $fonctionsService;
     }
 
-    #[Route('/api/users', name: 'api_users_index', methods: ['GET'])]
+
+
+    #[Route('/api/user/liste', name: 'api_users_index_liste', methods: ['GET'])]
     public function listPaginated(Request $request, UserRepository $repo): Response
     {
         $page = (int) $request->query->get('page', 1);
         $size = (int) $request->query->get('size', 10);
-        $search = $request->query->get('search');            // string
-        $role = $request->query->get('role');              // "ROLE_ADMIN"...
-        $enabled = $request->query->get('enabled');           // "true" | "false" | null
-        $activated = $request->query->get('activated');         // "true" | "false" | null
-        $sort = $request->query->get('sort', 'id,DESC');   // "nom,ASC" ...
+        $search = $request->query->get('search');     // string
+        $role = $request->query->get('role');       // "ROLE_ADMIN"...
+        $enabled = $request->query->get('enabled');    // "true" | "false" | null
+        $activated = $request->query->get('activated');  // "true" | "false" | null
+        $sort = $request->query->get('sort', 'id,DESC'); // "nom,ASC" ...
 
         $result = $repo->searchPaginated([
+            'all' => false, // ⬅️ garder la pagination
             'page' => $page,
             'size' => $size,
             'search' => $search ?: null,
@@ -54,10 +62,14 @@ class UserController extends AbstractController
             'sort' => $sort,
         ]);
 
-        // Projection légère (évite d’exposer password, relations complètes, etc.)
-        $data = array_map(function (User $u) {
+        $counts = $result['counts'] ?? [];
+
+        // Projection légère (NE PAS toucher la collection → pas de JOIN cachés)
+        $data = array_map(function (User $u) use ($counts) {
+            $id = $u->getId();
+
             return [
-                'id' => $u->getId(),
+                'id' => $id,
                 'nom' => $u->getNom(),
                 'prenom' => $u->getPrenom(),
                 'email' => $u->getEmail(),
@@ -67,8 +79,14 @@ class UserController extends AbstractController
                 'roles' => $u->getRoles(),
                 'enabled' => $u->isEnabled(),
                 'activated' => $u->isActiveted(),
+                'nombre' => $u->getAdresse(), // (vérifie ce champ si c'est volontaire)
                 'isHabitant' => $u->isHabitant(),
-                'demandes' => \count($u->getDemandes()), // nombre
+                'demandes' => $counts[$id] ?? 0,     // ⬅️ utilise le compteur
+                'numeroElecteur' => $u->getNumeroElecteur(),
+                'profession' => $u->getProfession(),
+                'situationMatrimoniale' => $u->getSituationMatrimoniale(),
+                'nombreEnfant' => $u->getNombreEnfant(),
+                'situationDemandeur' => $u->getSituationDemandeur(),
             ];
         }, $result['items']);
 
@@ -91,14 +109,14 @@ class UserController extends AbstractController
     }
 
 
+
     #[Route('/api/user/create', name: 'api_users_creation', methods: ['POST'])]
     public function createUser(
         Request $request,
         ValidatorInterface $validator,
         UserRepository $userRepository,
+        EntityManagerInterface $em
     ): Response {
-
-
 
         $data = json_decode($request->getContent(), true);
 
@@ -110,9 +128,10 @@ class UserController extends AbstractController
             ]), 400, ['Content-Type' => 'application/json']);
         }
 
+        $numeroElecteur = $data['numeroElecteur'] ?? null;
         $user->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
         $user->setTokenActiveted(bin2hex(random_bytes(32)));
-        // $user->setNumeroElecteur(null);
+        $user->setNumeroElecteur($numeroElecteur ?? null);
         $user->setDateNaissance(isset($data["dateNaissance"]) ? new \DateTime($data["dateNaissance"]) : null);
         $user->setLieuNaissance($data["lieuNaissance"] ?? null);
         $user->setTelephone($data["telephone"] ?? null);
@@ -124,11 +143,26 @@ class UserController extends AbstractController
         $user->setEmail($data['email']);
         $user->setNom($data["nom"] ?? null);
         $user->setActiveted(false);
-        $user->setEnabled(false);
+        $user->setEnabled(true);
+        $user->setSituationDemandeur($data["stuationDemandeur"] ?? null);
+        $user->setNombreEnfant($data["nombreEnfant"] ?? 0);
+        $user->setPasswordClaire($data['password'] ?? "Password123!");
+        $user->setSituationMatrimoniale($data["situationMatrimoniale"] ?? null);
 
-        // $resultat = $this->fonctionsService->checkNumeroElecteurExist($cni);
-        $user->setHabitant(false);
-        $url = $data['url'] ?? null;
+        $demandeId = isset($data["demandeId"]) ? $data["demandeId"] : null;
+        if ($demandeId) {
+            $demande = $em->getRepository(Demande::class)->find($demandeId);
+            if ($demande) {
+                $user->adddemande_demandeur($demande);
+            }
+        }
+        
+        if ($numeroElecteur !== null) {
+            $resultat = $this->fonctionsService->checkNumeroElecteurExist($numeroElecteur);
+            $user->setHabitant($resultat);
+        } else {
+            $user->setHabitant(false);
+        }
 
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
@@ -136,7 +170,8 @@ class UserController extends AbstractController
         }
 
         $userRepository->save($user, true);
-        $this->mailService->sendWelcomeMail($user->getEmail(), $user->getTokenActiveted(), $url);
+        $password = $data['password'] ?? 'Password123!';
+        $resultat = $this->mailService->sendAccountCreationMail($user, $password);
         return new Response(json_encode($user->toArray()), Response::HTTP_CREATED, ['Content-Type' => 'application/json']);
     }
 
@@ -159,7 +194,7 @@ class UserController extends AbstractController
 
         $user->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
         $user->setTokenActiveted(bin2hex(random_bytes(32)));
-        // $user->setNumeroElecteur(null);
+        $user->setNumeroElecteur(isset($data['numeroElecteur']) ? $data['numeroElecteur'] : null);
         $user->setDateNaissance(isset($data["dateNaissance"]) ? new \DateTime($data["dateNaissance"]) : null);
         $user->setLieuNaissance($data["lieuNaissance"] ?? null);
         $user->setTelephone($data["telephone"] ?? null);
@@ -170,8 +205,12 @@ class UserController extends AbstractController
         $user->setProfession($data['profession'] ?? null);
         $user->setEmail($data['email']);
         $user->setNom($data["nom"] ?? null);
+        $user->setNombreEnfant(isset($data['nombreEnfant']) ? $data['nombreEnfant'] : 0);
+        $user->setSituationMatrimoniale(isset($data['situationMatrimoniale']) ? $data['situationMatrimoniale'] : null);
+
         $user->setActiveted(false);
-        $user->setEnabled(false);
+        $user->setEnabled(true);
+        $user->setSituationDemandeur($data['situationDemandeur'] ?? null);
         // $resultat = $this->fonctionsService->checkNumeroElecteurExist($cni);
         $user->setHabitant(false);
 
@@ -218,7 +257,7 @@ class UserController extends AbstractController
         return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
     }
 
-   
+
     #[Route('/api/user/update-profile/{id}', name: 'api_users_mise_a_jour_compte', methods: ['PUT'])]
     public function modifierCompte(
         Request $request,
@@ -247,6 +286,7 @@ class UserController extends AbstractController
         $situationMatrimoniale = $data['situationMatrimoniale'] ?? $user->getSituationMatrimoniale();
         $nombreEnfant = $data['nombreEnfant'] ?? $user->getNombreEnfant();
         $profession = $data['profession'] ?? $user->getProfession();
+        $situationDemandeur = $data['situationDemandeur'] ?? $user->getSituationDemandeur();
 
         if ($email) {
             $user->setUsername($email);
@@ -271,8 +311,9 @@ class UserController extends AbstractController
         $user->setLieuNaissance($lieuNaissance);
         $user->setNumeroElecteur($numeroElecteur);
         $user->setNombreEnfant($nombreEnfant);
-        $user->setSituationMatrimoniale ($situationMatrimoniale);
+        $user->setSituationMatrimoniale($situationMatrimoniale);
         $user->setProfession($profession);
+        $user->setSituationDemandeur($situationDemandeur ?? null);
 
 
         $errors = $validator->validate($user);
@@ -297,6 +338,10 @@ class UserController extends AbstractController
             'roles' => $user->getRoles(),
             'enabled' => $user->isEnabled(),
             'activated' => $user->isActiveted(),
+            'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+            'profession' => $user->getProfession(),
+            'nombreEnfant' => $user->getProfession(),
+            'situationDemandeur' => $user->getSituationDemandeur(),
         ], Response::HTTP_OK);
     }
 
@@ -324,23 +369,27 @@ class UserController extends AbstractController
                 'message' => 'Un utilisateur avec cet email existe déjà.'
             ], Response::HTTP_CONFLICT);
         }
-        $user->setRoles(User::ROLE_ADMIN);
-        $user->setNom($data['nom']);
+        $user->setRoles($data['role']);
+        $user->setNom($data['nom'] ?? null);
         $user->setEmail($data['email']);
-        $user->setPrenom($data['prenom']);
-        $user->setAdresse($data['adresse']);
+        $user->setPrenom($data['prenom'] ?? null);
+        $user->setAdresse($data['adresse'] ?? null);
         $user->setUsername($data['email']);
         // profession   
-        $user->setProfession($data['profession']);
-        $user->setTelephone($data['telephone']);
-        $user->setLieuNaissance($data['lieuNaissance']);
-        $user->setDateNaissance(new \DateTime($data['dateNaissance']));
+        $user->setProfession($data['profession'] ?? null);
+        $user->setTelephone($data['telephone'] ?? null);
+        $user->setLieuNaissance($data['lieuNaissance'] ?? null);
+        $user->setDateNaissance(new \DateTime($data['dateNaissance'] ?? null));
         $user->setNumeroElecteur($data['numeroElecteur'] ?? null);
+        $user->setNombreEnfant($data['nombreEnfant'] ?? null);
+        $user->setSituationMatrimoniale($data['situationMatrimoniale'] ?? null);
+        $user->setSituationDemandeur($data['situationDemandeur'] ?? null);
+
         $resultat = $this->fonctionsService->checkNumeroElecteurExist($data['numeroElecteur']);
         $user->setHabitant($resultat ?? false);
 
         $user->setActiveted(false);
-        $user->setEnabled(false);
+        $user->setEnabled(true);
         $user->setTokenActiveted(bin2hex(random_bytes(32)));
 
         $passwordGenere = $user->generatePassword(8);
@@ -374,7 +423,11 @@ class UserController extends AbstractController
                     'prenom' => $user->getPrenom(),
                     'dateNaissance' => $user->getDateNaissance(),
                     'lieuNaissance' => $user->getLieuNaissance(),
-                    'numeroElecteur' => $user->getNumeroElecteur()
+                    'numeroElecteur' => $user->getNumeroElecteur(),
+                    'nombreEnfant' => $user->getNombreEnfant(),
+                    'profession' => $user->getProfession(),
+                    'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+                    'situationDemandeur' => $user->getSituationDemandeur()
                 ]
             ],
             Response::HTTP_CREATED
@@ -408,6 +461,11 @@ class UserController extends AbstractController
                 'dateNaissance' => $user->getDateNaissance(),
                 'lieuNaissance' => $user->getLieuNaissance(),
                 'isHabitant' => $user->isHabitant(),
+                'numeroElecteur' => $user->getNumeroElecteur(),
+                'nombreEnfant' => $user->getNombreEnfant(),
+                'profession' => $user->getProfession(),
+                'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+                'situationDemandeur' => $user->getSituationDemandeur()
             ];
         }
         return $this->json($resultats, Response::HTTP_OK);
@@ -417,16 +475,23 @@ class UserController extends AbstractController
     #[Route('/api/user/update-activated-status/{id}', name: 'api_users_update_status', methods: ['PUT'])]
     public function updateStatus($id, Request $request, UserRepository $userRepository): Response
     {
-        $isActive = json_decode($request->getContent(), true)['isActive'];
-        $user = $userRepository->find($id);
-        if ($user) {
-            $user->setActiveted(boolval($isActive));
-            $userRepository->save($user, true);
+        $data = json_decode($request->getContent(), true);
+        $isActive = $data['activated'];
 
-            $this->mailService->sendAccountStatusChangeEmail($user->getEmail(), $isActive, $user);
-            return $this->json('Utilisateur mis à jour', Response::HTTP_OK);
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json("Compte Utilisateur non trouvée", Response::HTTP_BAD_REQUEST);
         }
-        return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
+
+        $user->setActiveted(boolval($isActive));
+        $userRepository->save($user, true);
+
+        if ($user->getEmail()) {
+            $this->mailService->sendAccountStatusChangeEmail($user->getEmail(), $isActive, $user);
+        }
+
+        return $this->json('Compte utilisateur mis à jour', 200);
+
     }
 
     // activated-account
@@ -518,32 +583,6 @@ class UserController extends AbstractController
     }
 
 
-    // methode de reccuperation des données d'un utilisateur
-    #[Route('/api/user/{id}/details2', name: 'api_user_show_2', methods: ['GET'])]
-    public function details2($id, UserRepository $userRepository, FonctionsService $fonctionsService): Response
-    {
-        $user = $userRepository->find($id);
-        if (!$user)
-            return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
-        $resultat = [
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'nom' => $user->getNom(),
-            'activated' => $user->isActiveted(),
-            'prenom' => $user->getPrenom(),
-            'dateNaissance' => $user->getDateNaissance(),
-            'lieuNaissance' => $user->getLieuNaissance(),
-            'numeroElecteur' => $user->getNumeroElecteur(),
-            'telephone' => $user->getTelephone(),
-            'adresse' => $user->getAdresse(),
-            'demandes' => $user->getDemandes(),
-            'enabled' => $user->isEnabled(),
-            'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
-            // 'avatar' => $user->getAvatar(),
-        ];
-        return $this->json($resultat, Response::HTTP_OK);
-    }
-
     #[Route('/api/user/{id}/details', name: 'api_user_show', methods: ['GET'])]
     public function details($id, UserRepository $userRepository, FonctionsService $fonctionsService): Response
     {
@@ -553,38 +592,8 @@ class UserController extends AbstractController
 
         // Prepare demandes with localite information
         $demandesArray = [];
-        foreach ($user->getDemandes() as $demande) {
-            $demandeData = [
-                'id' => $demande->getId(),
-                'typeDemande' => $demande->getTypeDemande(),
-                'superficie' => $demande->getSuperficie(),
-                'usagePrevu' => $demande->getUsagePrevu(),
-                'possedeAutreTerrain' => $demande->isPossedeAutreTerrain(),
-                'statut' => $demande->getStatut(),
-                'dateCreation' => $demande->getDateCreation(),
-                'dateModification' => $demande->getDateModification(),
-                'document' => $demande->getDocument(),
-                'typeDocument' => $demande->getTypeDocument(),
-                'recto' => $demande->getRecto(),
-                'verso' => $demande->getVerso(),
-            ];
-
-            // Add localite information if available
-            if ($demande->getLocalite()) {
-                $localite = $demande->getLocalite();
-                $demandeData['localite'] = [
-                    'id' => $localite->getId(),
-                    'nom' => $localite->getNom(),
-                    'prix' => $localite->getPrix(),
-                    'description' => $localite->getDescription(),
-                    'latitude' => $localite->getLatitude(),
-                    'longitude' => $localite->getLongitude(),
-                ];
-            } else {
-                $demandeData['localite'] = null;
-            }
-
-            $demandesArray[] = $demandeData;
+        foreach ($user->getdemande_demandeurs() as $demande) {
+            $demandesArray[] = $this->serializeItem($demande);
         }
 
         $resultat = [
@@ -601,7 +610,12 @@ class UserController extends AbstractController
             'demandes' => $demandesArray,
             'enabled' => $user->isEnabled(),
             'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
-            // 'avatar' => $user->getAvatar(),
+            'avatar' => $user->getAvatar(),
+            'roles' => $user->getRoles(),
+            'nombreEnfant' => $user->getNombreEnfant(),
+            'profession' => $user->getProfession(),
+            'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+            'situationDemandeur' => $user->getSituationDemandeur()
         ];
 
         return $this->json($resultat, Response::HTTP_OK);
@@ -614,9 +628,6 @@ class UserController extends AbstractController
         $users = $userRepository->findBy([], ['id' => 'DESC']);
         $resultat = [];
         foreach ($users as $user) {
-            $isHabitant = $this->fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur());
-
-
             $resultat[] = [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -632,15 +643,96 @@ class UserController extends AbstractController
                 'activated' => $user->isActiveted(),
                 'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
                 // 'demandes' => $user->getDemandes(),
-                'demandes' => count($user->getDemandes()),
-                'parcelles'=> count($user->getParcelles()),
+                'demandes' => count($user->getdemande_demandeurs()),
+                'parcelles' => count($user->getParcelles()),
                 'passwordClaire' => $user->getPasswordClaire(),
-                // 'avatar' => $user->getAvatar(),
+                'nombreEnfant' => $user->getNombreEnfant(),
+                'profession' => $user->getProfession(),
+                'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+                'situationDemandeur' => $user->getSituationDemandeur()
             ];
         }
 
         return $this->json($resultat, Response::HTTP_OK);
     }
+
+    #[Route('/api/user/demandeurs', name: 'api_user_list_demandeur', methods: ['GET'])]
+    public function listDemandeur(
+        Request $req,
+        EntityManagerInterface $em,
+        FonctionsService $fonctionsService
+    ): Response {
+        $minDemandes = max(1, (int) $req->query->get('minDemandes', 1));
+
+        // u = User, d = Request (demande), p = Parcelle
+        $qb = $em->createQueryBuilder()
+            ->from(User::class, 'u')
+            ->leftJoin('u.demande_demandeurs', 'd')
+            ->leftJoin('u.parcelles', 'p')
+            ->select([
+                'u.id            AS id',
+                'u.email         AS email',
+                'u.nom           AS nom',
+                'u.prenom        AS prenom',
+                'u.roles         AS roles',
+                'u.telephone     AS telephone',
+                'u.adresse       AS adresse',
+                'u.numeroElecteur AS numeroElecteur',
+                'u.profession    AS profession',
+                'u.situationMatrimoniale AS situationMatrimoniale',
+                'u.situationDemandeur    AS situationDemandeur',
+                'u.enabled       AS enabled',
+                'u.activeted     AS activated',
+                'u.dateNaissance AS dateNaissance',
+                'u.lieuNaissance AS lieuNaissance',
+                // Compteurs
+                'COUNT(DISTINCT d.id) AS demandes',
+                'COUNT(DISTINCT p.id) AS parcelles',
+            ])
+            ->groupBy('u.id')
+            ->having('COUNT(DISTINCT d.id) >= :minDemandes')
+            ->setParameter('minDemandes', $minDemandes)
+            ->orderBy('u.id', 'DESC');
+
+        // IMPORTANT: on hydrate en tableau pour récupérer les alias "demandes", "parcelles"
+        $rows = $qb->getQuery()->getArrayResult();
+
+        // Post-traitement / sérialisation légère (dates + isHabitant)
+        $out = [];
+        foreach ($rows as $r) {
+            $dateNaissance = $r['dateNaissance'] instanceof \DateTimeInterface
+                ? $r['dateNaissance']->format('Y-m-d')
+                : ($r['dateNaissance'] ?? null);
+
+            $numeroElecteur = $r['numeroElecteur'] ?? null;
+            $isHabitant = $numeroElecteur ? (bool) $fonctionsService->checkNumeroElecteurExist($numeroElecteur) : false;
+
+            $out[] = [
+                'id' => (int) $r['id'],
+                'email' => $r['email'],
+                'nom' => $r['nom'],
+                'prenom' => $r['prenom'],
+                'roles' => is_array($r['roles']) ? $r['roles'] : [],
+                'telephone' => $r['telephone'],
+                'adresse' => $r['adresse'],
+                'numeroElecteur' => $numeroElecteur,
+                'profession' => $r['profession'],
+                'situationMatrimoniale' => $r['situationMatrimoniale'],
+                'situationDemandeur' => $r['situationDemandeur'],
+                'enabled' => $r['enabled'],
+                'activated' => $r['activated'],
+                'dateNaissance' => $dateNaissance,
+                'lieuNaissance' => $r['lieuNaissance'],
+                'isHabitant' => $isHabitant,
+                // alias récupérés car getArrayResult()
+                'demandes' => (int) $r['demandes'],
+                'parcelles' => (int) $r['parcelles'],
+            ];
+        }
+
+        return $this->json($out, Response::HTTP_OK);
+    }
+
 
     // get data if the user is habitant
     #[Route('/api/user/{id}/is-habitant', name: 'api_user_is_habitant', methods: ['GET'])]
@@ -664,13 +756,13 @@ class UserController extends AbstractController
             return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
         $data = json_decode($request->getContent(), true);
 
-        if ($data['currentPassword'] === $data['newPassword']) {
-            return $this->json(['message' => 'Le nouveau mot de passe doit différer du mot de passe actuel'], Response::HTTP_BAD_REQUEST);
-        }
+        // if ($data['currentPassword'] === $data['newPassword']) {
+        //     return $this->json(['message' => 'Le nouveau mot de passe doit différer du mot de passe actuel'], Response::HTTP_BAD_REQUEST);
+        // }
 
-        if (!password_verify($data['currentPassword'], $user->getPassword())) {
-            return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
-        }
+        // if (!password_verify($data['currentPassword'], $user->getPassword())) {
+        //     return $this->json(['message' => 'Mot de passe incorrect'], Response::HTTP_BAD_REQUEST);
+        // }
 
         $newPassword = password_hash($data['newPassword'], PASSWORD_BCRYPT);
         $user->setPassword($newPassword);
@@ -678,7 +770,6 @@ class UserController extends AbstractController
         $userRepository->save($user, true);
         return $this->json(['message' => 'Mot de passe mis à jour avec success', 'password' => $data['newPassword'], 'hash' => $user->getPassword()], Response::HTTP_OK);
     }
-
 
     // se connecter sur une base de données et reccuperer les users dans la table users qui ont le meme numeroElecteur
 
@@ -736,5 +827,114 @@ class UserController extends AbstractController
         $this->mailService->sendEmailChangeRole($user->getEmail(), $data['role'], $user);
         $userRepository->save($user, true);
         return $this->json(['message' => 'Role mis à jour avec success'], Response::HTTP_OK);
+    }
+
+
+    private function serializeItem(Demande $d): array
+    {
+        if (method_exists($d, 'toArray')) {
+            $arr = $d->toArray();
+
+            // Normalisation des URLs fichiers
+            foreach (['recto', 'verso'] as $k) {
+                if (!empty($arr[$k]) && !preg_match('#^https?://#i', (string) $arr[$k])) {
+                    $v = (string) $arr[$k];
+                    if ($v !== '' && $v[0] !== '/') {
+                        $v = '/' . ltrim($v, '/');
+                    }
+                    if ($v !== '' && !str_starts_with($v, '/tfs/')) {
+                        $v = '/tfs' . $v;
+                    }
+                    $arr[$k] = rtrim($this->fileBaseUrl, '/') . $v;
+                }
+            }
+
+            // localite = STRING (champ texte)
+            $arr['localite'] = $d->getLocalite();
+
+            // quartier = OBJET (relation)
+            $quartier = $d->getQuartier();
+            $arr['quartier'] = $quartier ? [
+                'id' => $quartier->getId(),
+                'nom' => method_exists($quartier, 'getNom') ? $quartier->getNom() : null,
+                'prix' => method_exists($quartier, 'getPrix') ? $quartier->getPrix() : null,
+                'longitude' => method_exists($quartier, 'getLongitude') ? $quartier->getLongitude() : null,
+                'latitude' => method_exists($quartier, 'getLatitude') ? $quartier->getLatitude() : null,
+                'description' => method_exists($quartier, 'getDescription') ? $quartier->getDescription() : null,
+            ] : null;
+
+            // (Optionnel) enveloppe "demandeur" si toArray ne le fait pas
+            if (!isset($arr['demandeur'])) {
+                $arr['demandeur'] = [
+                    'prenom' => $d->getPrenom(),
+                    'nom' => $d->getNom(),
+                    'email' => $d->getEmail(),
+                    'telephone' => $d->getTelephone(),
+                    'adresse' => $d->getAdresse(),
+                    'profession' => $d->getProfession(),
+                    'numeroElecteur' => $d->getNumeroElecteur(),
+                    'dateNaissance' => $d->getDateNaissance()?->format('Y-m-d'),
+                    'lieuNaissance' => $d->getLieuNaissance(),
+                    'situationMatrimoniale' => $d->getSituationMatrimoniale(),
+                    'statutLogement' => $d->getStatutLogement(),
+                    'nombreEnfant' => $d->getNombreEnfant(),
+                    'isHabitant' => $this->fonctionsService->checkNumeroElecteurExist($d->getNumeroElecteur()),
+                ];
+            }
+
+            return $arr;
+        }
+
+        $historiques = [];
+        foreach ($d->getHistoriqueValidations() as $historique) {
+            $historiques[] = $historique->toArray();
+        }
+
+        return [
+            'id' => $d->getId(),
+            'typeDemande' => $d->getTypeDemande(),
+            'typeDocument' => $d->getTypeDocument(),
+            'typeTitre' => $d->getTypeTitre(),
+            'superficie' => $d->getSuperficie(),
+            'usagePrevu' => $d->getUsagePrevu(),
+            'possedeAutreTerrain' => $d->isPossedeAutreTerrain(),
+            'statut' => $d->getStatut(),
+            'dateCreation' => $d->getDateCreation()?->format('Y-m-d H:i:s'),
+            'dateModification' => $d->getDateModification()?->format('Y-m-d H:i:s'),
+            'motif_refus' => $d->getMotifRefus(),
+            'recto' => $d->getRecto(),
+            'verso' => $d->getVerso(),
+            'terrainAKaolack' => $d->isTerrainAKaolack(),
+            'terrainAilleurs' => $d->isTerrainAilleurs(),
+            'decisionCommission' => $d->getDecisionCommission(),
+            'rapport' => $d->getRapport(),
+            'localite' => $d->getLocalite(), // <- déjà présent ici
+            'recommandation' => $d->getRecommandation(),
+            'niveauValidationActuel' => $d->getNiveauValidationActuel() ? $d->getNiveauValidationActuel()->toArray() : null,
+            'historiqueValidations' => $historiques,
+            'demandeur' => [
+                'prenom' => $d->getPrenom(),
+                'nom' => $d->getNom(),
+                'email' => $d->getEmail(),
+                'telephone' => $d->getTelephone(),
+                'adresse' => $d->getAdresse(),
+                'profession' => $d->getProfession(),
+                'numeroElecteur' => $d->getNumeroElecteur(),
+                'dateNaissance' => $d->getDateNaissance()?->format('Y-m-d'),
+                'lieuNaissance' => $d->getLieuNaissance(),
+                'situationMatrimoniale' => $d->getSituationMatrimoniale(),
+                'statutLogement' => $d->getStatutLogement(),
+                'nombreEnfant' => $d->getNombreEnfant(),
+                'isHabitant' => $this->fonctionsService->checkNumeroElecteurExist($d->getNumeroElecteur()),
+            ],
+            'quartier' => $d->getQuartier() ? [
+                'id' => $d->getQuartier()->getId(),
+                'nom' => $d->getQuartier()->getNom(),
+                'prix' => $d->getQuartier()->getPrix(),
+                'longitude' => $d->getQuartier()->getLongitude(),
+                'latitude' => $d->getQuartier()->getLatitude(),
+                'description' => $d->getQuartier()->getDescription(),
+            ] : null,
+        ];
     }
 }

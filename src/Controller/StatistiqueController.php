@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +22,7 @@ class StatistiqueController extends AbstractController
 
 
     #[Route('/api/statistiques', name: 'api_get_statistiques', methods: ['GET'])]
-    public function getStatistiques(): Response
+    public function getStatistiques(UserRepository $userRepository): JsonResponse
     {
         $metadataList = $this->em->getMetadataFactory()->getAllMetadata();
         $byTable = [];
@@ -48,15 +49,17 @@ class StatistiqueController extends AbstractController
             return 0;
         };
 
+            $users = $userRepository->findBy(["roles" => "ROLE_DEMANDEUR"]);
+
         // Résumé selon tes clés cibles (avec alias/fallbacks sûrs)
         $resulstat = [
-            "users" => $pick(["gs_mairie_users"]),
+            "users" => count($users),
             "parcelles" => $pick(["gs_mairie_parcelles", "gs_mairie_parcelle"]), // singulier ↔ pluriel
             "lots" => $pick(["gs_mairie_lots"]),
             "lotissements" => $pick(["gs_mairie_lotissements"]),
             "plan_lotissements" => $pick(["gs_mairie_plan_lotissements"]),
             "plan_lots" => $pick(["gs_mairie_plan_lots"]), 
-            "demande_terrains" => $pick(["gs_mairie_demande_terrains"]),
+            "demande_terrains" => $pick(["gs_mairie_demandes"]),
             "quartiers"        => $pick(["gs_mairie_localites"]),
             "documents"        => $pick(["gs_mairie_documents"]),
             "niveau_validations" => $pick(["gs_mairie_niveau_validations"]),

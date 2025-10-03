@@ -21,33 +21,68 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 class HistoriqueValidation
 {
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['historique:read'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: DemandeTerrain::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['historique:read'])]
-    private ?DemandeTerrain $demande = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['historique:read'])]
+    // #[ORM\ManyToOne(targetEntity: Request::class)]
+    // #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(['historique:read', 'historique:write'])]
+    // private ?Request $request = null;
+
+     #[ORM\ManyToOne(targetEntity: Request::class, inversedBy: 'historiqueValidations', fetch: 'LAZY')]
+    private ?Request $request = null;
+
+    // #[ORM\ManyToOne(targetEntity: User::class)]
+    // #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(['historique:read', 'historique:write'])]
+    // private ?User $validateur = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'LAZY')]
     private ?User $validateur = null;
 
+    /** "valide" | "rejete" */
     #[ORM\Column(length: 50)]
-    #[Groups(['historique:read'])]
-    private ?string $action = null; // "validé" ou "rejeté"
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?string $action = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['historique:read'])]
+    #[Groups(['historique:read', 'historique:write'])]
     private ?string $motif = null;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups(['historique:read'])]
     private ?\DateTimeInterface $dateAction = null;
+
+    /** --- Snapshots utiles pour audit --- */
+
+    // Nom du niveau au moment de l’action
+    #[ORM\Column(length: 150, nullable: true)]
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?string $niveauNom = null;
+
+    // Ordre du niveau au moment de l’action
+    #[ORM\Column(nullable: true)]
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?int $niveauOrdre = null;
+
+    // Rôle requis au moment de l’action
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?string $roleRequis = null;
+
+    // (Optionnel) statut avant/après
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?string $statutAvant = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['historique:read', 'historique:write'])]
+    private ?string $statutApres = null;
 
     public function __construct()
     {
@@ -59,16 +94,18 @@ class HistoriqueValidation
         return $this->id;
     }
 
-    public function getDemande(): ?DemandeTerrain
-    {
-        return $this->demande;
-    }
 
-    public function setDemande(?DemandeTerrain $demande): static
+    public function setRequest(?Request $request): static
     {
-        $this->demande = $demande;
+        $this->request = $request;
         return $this;
     }
+
+    public function getRequest(): ?Request
+    {
+        return $this->request;
+    }
+
 
     public function getValidateur(): ?User
     {
@@ -111,6 +148,82 @@ class HistoriqueValidation
     public function setDateAction(\DateTimeInterface $dateAction): static
     {
         $this->dateAction = $dateAction;
+        return $this;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'validateur' => $this->getValidateur() ? $this->getValidateur()->toArray() : null,
+            'action' => $this->getAction(),
+            'motif' => $this->getMotif(),
+            'dateAction' => $this->getDateAction() ? $this->getDateAction()->format('Y-m-d H:i:s') : null,
+            'niveauNom' => $this->getNiveauNom(),
+            'niveauOrdre' => $this->getNiveauOrdre(),
+            'roleRequis' => $this->getRoleRequis(),
+            'statutAvant' => $this->getStatutAvant(),
+            'statutApres' => $this->getStatutApres(),
+        ];
+    }
+
+    public function getNiveauNom(): ?string
+    {
+        return $this->niveauNom;
+    }
+
+    public function setNiveauNom(?string $niveauNom): static
+    {
+        $this->niveauNom = $niveauNom;
+
+        return $this;
+    }
+
+    public function getNiveauOrdre(): ?int
+    {
+        return $this->niveauOrdre;
+    }
+
+    public function setNiveauOrdre(?int $niveauOrdre): static
+    {
+        $this->niveauOrdre = $niveauOrdre;
+
+        return $this;
+    }
+
+    public function getRoleRequis(): ?string
+    {
+        return $this->roleRequis;
+    }
+
+    public function setRoleRequis(?string $roleRequis): static
+    {
+        $this->roleRequis = $roleRequis;
+
+        return $this;
+    }
+
+    public function getStatutAvant(): ?string
+    {
+        return $this->statutAvant;
+    }
+
+    public function setStatutAvant(?string $statutAvant): static
+    {
+        $this->statutAvant = $statutAvant;
+
+        return $this;
+    }
+
+    public function getStatutApres(): ?string
+    {
+        return $this->statutApres;
+    }
+
+    public function setStatutApres(?string $statutApres): static
+    {
+        $this->statutApres = $statutApres;
+
         return $this;
     }
 }

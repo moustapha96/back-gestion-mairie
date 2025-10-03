@@ -12,7 +12,8 @@ class TitreFoncierService
     public function __construct(
         private EntityManagerInterface $em,
         private TitreFoncierRepository $repo
-    ) {}
+    ) {
+    }
 
     /** @return array{items: array<int,TitreFoncier>, total:int} */
     public function searchPaginated(
@@ -29,21 +30,21 @@ class TitreFoncierService
         if (!empty($filters['numero'])) {
             $qb->andWhere('t.numero LIKE :numero')->setParameter('numero', '%' . $filters['numero'] . '%');
         }
-        if (!empty($filters['numeroLot'])) {
-            $qb->andWhere('t.numeroLot LIKE :numeroLot')->setParameter('numeroLot', '%' . $filters['numeroLot'] . '%');
-        }
         if (!empty($filters['quartierId'])) {
             $qb->andWhere('q.id = :qid')->setParameter('qid', $filters['quartierId']);
         }
         if (!empty($filters['superficieMin'])) {
-            $qb->andWhere('t.superficie >= :smin')->setParameter('smin', (float)$filters['superficieMin']);
+            $qb->andWhere('t.superficie >= :smin')->setParameter('smin', (float) $filters['superficieMin']);
         }
         if (!empty($filters['superficieMax'])) {
-            $qb->andWhere('t.superficie <= :smax')->setParameter('smax', (float)$filters['superficieMax']);
+            $qb->andWhere('t.superficie <= :smax')->setParameter('smax', (float) $filters['superficieMax']);
         }
-      
+        if (!empty($filters['type'])) {
+            $qb->andWhere('t.type = :type')->setParameter('type', $filters['type']);
+        }
+
         // Tri (whitelist)
-        $allowed = ['id', 'numero', 'numeroLot', 'superficie' , 'type'];
+        $allowed = ['id', 'numero', 'superficie', 'type'];
         $sf = in_array($sortField, $allowed, true) ? $sortField : 'id';
         $so = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
         $qb->orderBy('t.' . $sf, $so);
@@ -85,12 +86,28 @@ class TitreFoncierService
 
     private function hydrate(TitreFoncier $t, array $data): void
     {
-        if (array_key_exists('numero', $data))       $t->setNumero($data['numero']);
-        if (array_key_exists('superficie', $data))   $t->setSuperficie($data['superficie'] !== null ? (float)$data['superficie'] : null);
-        if (array_key_exists('titreFigure', $data))  $t->setTitreFigure(is_array($data['titreFigure']) ? $data['titreFigure'] : null);
-        if (array_key_exists('etatDroitReel', $data)) $t->setEtatDroitReel($data['etatDroitReel']);
-        if (array_key_exists('numeroLot', $data))    $t->setNumeroLot($data['numeroLot']);
-        if(array_key_exists('type', $data))           $t->setType($data['type']); $data['type'];
+        if (array_key_exists('numero', $data)) {
+            $t->setNumero($data['numero']);
+        }
+        if (array_key_exists('superficie', $data)) {
+            $t->setSuperficie($data['superficie'] !== null && $data['superficie'] !== '' ? (float) $data['superficie'] : null);
+        }
+        if (array_key_exists('titreFigure', $data)) {
+            $t->setTitreFigure(is_array($data['titreFigure']) ? $data['titreFigure'] : null);
+        }
+        if (array_key_exists('etatDroitReel', $data)) {
+            $t->setEtatDroitReel($data['etatDroitReel']);
+        }
+
+        // ✅ correctif: valider et affecter le type uniquement si non vide
+        if (array_key_exists('type', $data) && $data['type'] !== null && $data['type'] !== '') {
+            $t->setType($data['type']); // validera via constantes TYPE_*
+        }
+
+        // ✅ fichier: chemin relatif type "/tfs/xxx.ext" ou URL complète
+        if (array_key_exists('fichier', $data)) {
+            $t->setFichier($data['fichier'] ?: null);
+        }
 
         if (array_key_exists('quartierId', $data)) {
             $q = null;
@@ -100,4 +117,5 @@ class TitreFoncierService
             $t->setQuartier($q);
         }
     }
+
 }

@@ -104,18 +104,14 @@ class ParcelleController extends AbstractController
 
         // Création de la Parcelle
         $parcelle = new Parcelle();
-        $parcelle->setNumero($data['numero']);
-        $parcelle->setSurface($data['surface']);
-        $parcelle->setStatut($data['statut']);
+        $parcelle->setNumero($data['numero'] ?? null);
+        $parcelle->setSurface($data['surface'] ?? null);
+        $parcelle->setStatut($data['statut'] ?? null);
         $parcelle->setLotissement($lotissement);
 
         // Ajout des coordonnées géographiques
-        if (isset($data['latitude'])) {
-            $parcelle->setLatitude($data['latitude']);
-        }
-        if (isset($data['longitude'])) {
-            $parcelle->setLongitude($data['longitude']);
-        }
+        $parcelle->setLatitude($data['latitude'] ?? null);
+        $parcelle->setLongitude($data['longitude'] ?? null);
 
         $this->em->persist($parcelle);
         $this->em->flush();
@@ -137,10 +133,7 @@ class ParcelleController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
-        // Mise à jour des informations de la Parcelle
-        if (isset($data['numero'])) {
-            $parcelle->setNumero($data['numero']);
-        }
+
         if (isset($data['lotissementId'])) {
             $lotissement = $lotissementRepository->find($data['lotissementId']);
             if (!$lotissement) {
@@ -148,19 +141,13 @@ class ParcelleController extends AbstractController
             }
             $parcelle->setLotissement($lotissement);
         }
-        if (isset($data['surface'])) {
-            $parcelle->setSurface($data['surface']);
-        }
-        if (isset($data['statut'])) {
-            $parcelle->setStatut($data['statut']);
-        }
-        // Ajout de la mise à jour des coordonnées géographiques
-        if (isset($data['latitude'])) {
-            $parcelle->setLatitude($data['latitude']);
-        }
-        if (isset($data['longitude'])) {
-            $parcelle->setLongitude($data['longitude']);
-        }
+
+        $parcelle->setNumero($data['numero'] ?? null);
+        $parcelle->setSurface($data['surface'] ?? 0);
+        $parcelle->setLatitude( $data['latitude']  != null ? floatval($data['latitude']) : null);
+        $parcelle->setLongitude( $data['longitude']  != null ? floatval($data['longitude']) : null);
+        $parcelle->setStatut($data['statut'] ?? null);
+
 
         $this->em->persist($parcelle);
         $this->em->flush();
@@ -319,5 +306,21 @@ class ParcelleController extends AbstractController
 
         $data = $normalizer->normalize($parcelle, null, ['groups' => ['parcelle:item', 'parcelle:list']]);
         return $this->json($data);
+    }
+
+    #[Route('/api/parcelle/{id}/delete', name:'api_delete_parcelle', methods: ['DELETE'])]
+    public function deleteParcelle(int $id): Response
+    {    
+        $parcelle = $this->em->getRepository(Parcelle::class)->find($id);
+        if (!$parcelle) {
+            return $this->json(['error' => 'Parcelle not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if( $parcelle->getProprietaire()) {
+            return $this->json("Parcelle déjà attribuée", Response::HTTP_CONFLICT);
+        }
+        $this->em->remove($parcelle);
+        $this->em->flush();
+        return $this->json("Parcelle supprimée avec succès", Response::HTTP_OK);
     }
 }

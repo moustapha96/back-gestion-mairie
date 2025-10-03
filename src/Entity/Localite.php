@@ -50,13 +50,7 @@ class Localite
     #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
     private ?float $longitude = null;
 
-    /**
-     * @var Collection<int, DemandeTerrain>
-     */
-    #[ORM\OneToMany(targetEntity: DemandeTerrain::class, mappedBy: 'localite')]
-    #[Groups(['localite:list', 'localite:item', 'localite:write'])]
-    private Collection $demandes;
-
+   
     #[ORM\OneToMany(mappedBy: 'localite', targetEntity: Lotissement::class)]
     #[Groups(['localite:list', 'localite:item', 'localite:write', 'demandeur:list'])]
     private Collection $lotissements;
@@ -64,11 +58,17 @@ class Localite
     #[ORM\OneToMany(mappedBy: 'quartier', targetEntity: TitreFoncier::class)]
     private Collection $titreFonciers;
 
+    /**
+     * @var Collection<int, Request>
+     */
+    #[ORM\OneToMany(mappedBy: 'quartier', targetEntity: Request::class)]
+    private Collection $requests;
+
     public function __construct()
     {
-        $this->demandes = new ArrayCollection();
         $this->lotissements = new ArrayCollection();
         $this->titreFonciers = new ArrayCollection();
+        $this->requests = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -131,36 +131,6 @@ class Localite
     public function setLongitude(?float $longitude): self
     {
         $this->longitude = $longitude;
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, DemandeTerrain>
-     */
-    public function getDemandes(): Collection
-    {
-        return $this->demandes;
-    }
-
-    public function addDemande(DemandeTerrain $demande): static
-    {
-        if (!$this->demandes->contains($demande)) {
-            $this->demandes->add($demande);
-            $demande->setLocalite($this);
-        }
-
-        return $this;
-    }
-
-    public function removeDemande(DemandeTerrain $demande): static
-    {
-        if ($this->demandes->removeElement($demande)) {
-            // set the owning side to null (unless already changed)
-            if ($demande->getLocalite() === $this) {
-                $demande->setLocalite(null);
-            }
-        }
-
         return $this;
     }
 
@@ -230,6 +200,36 @@ class Localite
             // set the owning side to null (unless already changed)
             if ($titreFoncier->getQuartier() === $this) {
                 $titreFoncier->setQuartier(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Request>
+     */
+    public function getRequests(): Collection
+    {
+        return $this->requests;
+    }
+
+    public function addRequest(Request $request): static
+    {
+        if (!$this->requests->contains($request)) {
+            $this->requests->add($request);
+            $request->setQuartier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRequest(Request $request): static
+    {
+        if ($this->requests->removeElement($request)) {
+            // set the owning side to null (unless already changed)
+            if ($request->getQuartier() === $this) {
+                $request->setQuartier(null);
             }
         }
 

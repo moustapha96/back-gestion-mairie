@@ -1,5 +1,4 @@
 <?php
-// src/EventSubscriber/HttpAuditSubscriber.php
 namespace App\EventSubscriber;
 
 use App\services\AuditLogger;
@@ -20,9 +19,9 @@ class HttpAuditSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST  => ['onRequest', 10],
-            KernelEvents::EXCEPTION => ['onException', 0],
-            KernelEvents::RESPONSE => ['onResponse', -10],
+            // KernelEvents::REQUEST  => ['onRequest', 10],
+            // KernelEvents::EXCEPTION => ['onException', 0],
+            // KernelEvents::RESPONSE => ['onResponse', -10],
         ];
     }
 

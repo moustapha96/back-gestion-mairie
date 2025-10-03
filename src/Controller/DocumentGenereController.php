@@ -2,9 +2,8 @@
 
 namespace App\Controller;
 
-use App\Entity\DocumentGenere;
-use App\Repository\DemandeTerrainRepository;
 use App\Repository\DocumentGenereRepository;
+use App\Repository\RequestRepository;
 use App\services\PdfGeneratorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -31,11 +30,11 @@ class DocumentGenereController extends AbstractController
     public function generateDocument(
         $id,
         Request $request,
-        DemandeTerrainRepository $demandeTerrainRepository,
+        RequestRepository $demandeRepository,
         DocumentGenereRepository $documentGenereRepository
 
     ): JsonResponse {
-        $demande = $demandeTerrainRepository->find($id);
+        $demande = $demandeRepository->find($id);
         if (!$demande) {
             return new JsonResponse(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
         }

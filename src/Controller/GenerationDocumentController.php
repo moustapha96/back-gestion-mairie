@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\DocumentGenere;
-use App\Repository\DemandeTerrainRepository;
 use App\Repository\DocumentGenereRepository;
+use App\Repository\RequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,12 +35,12 @@ class GenerationDocumentController extends AbstractController
     public function generateDocument(
         int $id,
         Request $request,
-        DemandeTerrainRepository $demandeTerrainRepository,
+        RequestRepository $demandeRepository,
         DocumentGenereRepository $documentGenereRepository
     ): JsonResponse {
         try {
             // Find the request
-            $demande = $demandeTerrainRepository->find($id);
+            $demande = $demandeRepository->find($id);
             if (!$demande) {
                 return new JsonResponse([
                     'error' => 'Demande non trouvée'
@@ -66,7 +66,6 @@ class GenerationDocumentController extends AbstractController
             $documentGenere = $demande->getDocumentGenerer();
             if (!$documentGenere) {
                 $documentGenere = new DocumentGenere();
-                $documentGenere->setDemandeTerrain($demande);
                 $demande->setDocumentGenerer($documentGenere);
             }
 
@@ -139,70 +138,7 @@ class GenerationDocumentController extends AbstractController
                 ]
             ], Response::HTTP_CREATED);
 
-            // $html = $this->renderView($templateName, $templateData);
-
-            // // Configure PDF options
-            // $options = [
-            //     'page-size' => 'A4',
-            //     'margin-top' => '0.75in',
-            //     'margin-right' => '0.75in',
-            //     'margin-bottom' => '0.75in',
-            //     'margin-left' => '0.75in',
-            //     'encoding' => 'UTF-8',
-            //     'enable-local-file-access' => true,
-            //     'javascript-delay' => 1000,
-            //     'no-stop-slow-scripts' => true,
-            // ];
-
-            // // Generate PDF content
-            // $pdfContent = $this->pdfGenerator->getOutputFromHtml($html, $options);
-
-            // // Create unique filename
-            // $newFilename = $filename . '-' . uniqid() . '.pdf';
-
-            // // Ensure document directory exists
-            // $documentDirectory = $this->getParameter('document_generer_directory');
-            // if (!file_exists($documentDirectory)) {
-            //     mkdir($documentDirectory, 0777, true);
-            // }
-
-            // // Save PDF file
-            // $fullPath = $documentDirectory . '/' . $newFilename;
-            // $bytesWritten = file_put_contents($fullPath, $pdfContent);
-
-            // if ($bytesWritten === false) {
-            //     throw new \Exception('Impossible d\'écrire le fichier PDF');
-            // }
-            // // Update document entity
-            // $documentGenere->setFichier($fullPath);
-            // $documentGenere->setIsGenerated(true);
-
-            // // Save to database
-            // $this->entityManager->persist($documentGenere);
-            // $this->entityManager->flush();
-
-            // // Log success
-            // $this->logger->info('Document généré avec succès', [
-            //     'demande_id' => $id,
-            //     'document_id' => $documentGenere->getId(),
-            //     'filename' => $newFilename,
-            //     'type' => $data['typeDemande']
-            // ]);
-
-            // return new JsonResponse([
-            //     'success' => true,
-            //     'message' => 'Document généré avec succès',
-            //     'data' => [
-            //         'id' => $documentGenere->getId(),
-            //         'filename' => $newFilename,
-            //         'type' => $documentGenere->getType(),
-            //         'dateCreation' => $documentGenere->getDateCreation()->format('Y-m-d H:i:s'),
-            //         'path' => '/documents/' . $newFilename,
-            //         'size' => filesize($fullPath),
-            //         'isGenerated' => true
-            //     ]
-            // ], Response::HTTP_CREATED);
-        } catch (\Exception $e) {
+                    } catch (\Exception $e) {
             // Log error
             $this->logger->error('Erreur lors de la génération du document', [
                 'demande_id' => $id,

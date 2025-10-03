@@ -4,6 +4,11 @@ controllers:
         namespace: App\Controller
     type: attribute
 
+when@dev:
+  _errors:
+    resource: '@FrameworkBundle/Resources/config/routing/errors.xml'
+    type: xml
+    
 api_login:
     path: /api/login
     methods: ['POST']

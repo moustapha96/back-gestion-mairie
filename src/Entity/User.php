@@ -49,7 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     // Constants for roles
     const ROLE_AGENT = 'ROLE_AGENT';
-    const ROLE_DEMANDEUR = 'ROLE_DEMANDEUR';
+    const ROLE_demande_demandeurUR = 'ROLE_demande_demandeurUR';
     const ROLE_ADMIN = "ROLE_ADMIN";
     const ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
     const ROLE_MAIRE = "ROLE_MAIRE";
@@ -57,7 +57,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const ROLE_PRESIDENT_COMMISSION = "ROLE_PRESIDENT_COMMISSION";
     const ROLE_PERCEPTEUR = "ROLE_PERCEPTEUR";
 
-
+    const ROLE_DEMANDEUR = "ROLE_DEMANDEUR";
 
     const SITATION_MATRIMONIALE_CELIBATAIRE = "Célibataire";
     const SITATION_MATRIMONIALE_MARIE = "Marié(e)";
@@ -65,34 +65,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const SITATION_MATRIMONIALE_VEUF = "Veuf(ve)";
 
 
+    const SITUATION_demande_demandeurUR_PROPRIETAIRE = "Propriétaire";
+    const SITUATION_demande_demandeurUR_LOCATAIRE = "Locataire";
+    const SITUATION_demande_demandeurUR_HEBERGER = "Hébergé(e)";
+
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item', 'localite:item', 'localite:list', 'localite:write'])]
     private ?int $id = null;
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item', 'localite:item', 'localite:list', 'localite:write'])]
     #[ORM\Column(length: 180, unique: true)]
     private ?string $username = null;
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item', 'localite:item', 'localite:list', 'localite:write'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item', 'localite:item', 'localite:list', 'localite:write'])]
     #[ORM\Column]
     private array $roles = [];
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     #[ORM\Column]
     private ?string $password = null;
 
 
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     #[Assert\NotBlank]
     #[Assert\Email]
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Column(length: 255, unique: true, nullable: true)]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['user:list', 'user:item', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:list', 'user:item', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $avatar = null;
 
     #[Groups(['user:write'])]
@@ -115,42 +119,50 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $passwordClaire = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $prenom = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $nom = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?\DateTimeInterface $dateNaissance = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $lieuNaissance = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $adresse = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $profession = null;
 
-    #[ORM\Column(length: 13)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[ORM\Column(length: 13, nullable: true)]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Groups(['user:read', 'user:list', 'user:write', 'demande:list', 'demande:item'])]
+    #[Groups(['user:read', 'user:list', 'user:write', 'demande_demandeur:list', 'demande_demandeur:item'])]
     private ?string $numeroElecteur = null;
 
-    #[ORM\OneToMany(targetEntity: DemandeTerrain::class, mappedBy: 'utilisateur')]
+    // #[ORM\OneToMany(targetEntity: Request::class, mappedBy: 'utilisateur',
+    //     eager: true, cascade: ['persist', 'remove'])]
+
+    #[ORM\OneToMany(
+        targetEntity: Request::class,
+        mappedBy: 'utilisateur',
+        fetch: 'EXTRA_LAZY',
+        cascade: ['persist', 'remove']
+    )]
     #[Groups(['user:item'])]
     #[MaxDepth(1)]
-    private Collection $demandes;
+    private Collection $demande_demandeurs;
 
 
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
@@ -198,11 +210,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'proprietaire', targetEntity: Parcelle::class)]
     private Collection $parcelles;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $situationdemande_demandeurur = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $situationDemandeur = null;
+
 
     public function __construct(?FonctionsService $fonctionsService = null)
     {
         $this->fonctionsService = $fonctionsService;
-        $this->demandes = new ArrayCollection();
+        $this->demande_demandeurs = new ArrayCollection();
 
 
         if ($fonctionsService !== null && $this->getNumeroElecteur() !== null) {
@@ -304,17 +322,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->roles = [];
 
-        if (!in_array($roles, [
-            self::ROLE_AGENT,
-            self::ROLE_DEMANDEUR,
-            self::ROLE_ADMIN,
-            self::ROLE_SUPER_ADMIN,
-            self::ROLE_MAIRE,
-            self::ROLE_CHEF_SERVICE,
-            self::ROLE_PRESIDENT_COMMISSION,
-            self::ROLE_PERCEPTEUR,
+        if (
+            !in_array($roles, [
+                self::ROLE_AGENT,
+                self::ROLE_ADMIN,
+                self::ROLE_SUPER_ADMIN,
+                self::ROLE_MAIRE,
+                self::ROLE_CHEF_SERVICE,
+                self::ROLE_PRESIDENT_COMMISSION,
+                self::ROLE_PERCEPTEUR,
+                self::ROLE_DEMANDEUR
 
-        ])) {
+            ])
+        ) {
             throw new \InvalidArgumentException("Invalid role: " . $roles);
         }
         $this->roles = [$roles];
@@ -324,7 +344,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function addRole(string $role): static
     {
-        if (!in_array($role, [self::ROLE_AGENT, self::ROLE_DEMANDEUR, self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN])) {
+        if (
+            !in_array($role, [
+                self::ROLE_AGENT,
+                self::ROLE_ADMIN,
+                self::ROLE_SUPER_ADMIN,
+                self::ROLE_MAIRE,
+                self::ROLE_CHEF_SERVICE,
+                self::ROLE_PRESIDENT_COMMISSION,
+                self::ROLE_PERCEPTEUR,
+                self::ROLE_DEMANDEUR
+            ])
+        ) {
             throw new \InvalidArgumentException("Invalid role: " . $role);
         }
         if (!in_array($role, $this->roles)) {
@@ -461,6 +492,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+    #[Groups(['user:list', 'user:item'])]
+    public function getActivated(): ?bool
+    {
+        // mapping propre pour le front
+        return $this->activeted;
+    }
+    #[Groups(['user:list', 'user:item'])]
+    public function getEnabledFlag(): ?bool
+    {
+        return $this->enabled;
+    }
+
 
     public function getTokenActiveted(): ?string
     {
@@ -493,7 +536,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->prenom;
     }
 
-    public function setPrenom(string $prenom): static
+    public function setPrenom(?string $prenom): static
     {
         $this->prenom = $prenom;
 
@@ -505,7 +548,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->nom;
     }
 
-    public function setNom(string $nom): static
+    public function setNom(?string $nom): static
     {
         $this->nom = $nom;
 
@@ -517,7 +560,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->dateNaissance;
     }
 
-    public function setDateNaissance(\DateTimeInterface $dateNaissance): static
+    public function setDateNaissance(?\DateTimeInterface $dateNaissance): static
     {
         $this->dateNaissance = $dateNaissance;
 
@@ -529,7 +572,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->lieuNaissance;
     }
 
-    public function setLieuNaissance(string $lieuNaissance): static
+    public function setLieuNaissance(?string $lieuNaissance): static
     {
         $this->lieuNaissance = $lieuNaissance;
 
@@ -541,7 +584,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->adresse;
     }
 
-    public function setAdresse(string $adresse): static
+    public function setAdresse(?string $adresse): static
     {
         $this->adresse = $adresse;
 
@@ -553,7 +596,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->profession;
     }
 
-    public function setProfession(string $profession): static
+    public function setProfession(?string $profession): static
     {
         $this->profession = $profession;
 
@@ -565,7 +608,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->telephone;
     }
 
-    public function setTelephone(string $telephone): static
+    public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
 
@@ -577,13 +620,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->numeroElecteur;
     }
 
-    // public function setNumeroElecteur(string $numeroElecteur): static
-    // {
-    //     $this->numeroElecteur = $numeroElecteur;
-
-    //     return $this;
-    // }
-
     public function setNumeroElecteur(?string $numeroElecteur): static
     {
         $this->numeroElecteur = $numeroElecteur;
@@ -592,40 +628,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($numeroElecteur !== null && $this->fonctionsService !== null) {
             $this->updateHabitantStatus();
         }
-
         return $this;
     }
-
-
 
 
     /**
-     * @return Collection<int, DemandeTerrain>
+     * @return Collection<int, Request>
      */
-    public function getDemandes(): Collection
+    public function getdemande_demandeurs(): Collection
     {
-        return $this->demandes;
+        return $this->demande_demandeurs;
     }
 
-    public function addDemande(DemandeTerrain $demande): static
+    public function adddemande_demandeur(Request $demande_demandeur): static
     {
-        if (!$this->demandes->contains($demande)) {
-            $this->demandes->add($demande);
-            $demande->setUtilisateur($this);
+        if (!$this->demande_demandeurs->contains($demande_demandeur)) {
+            $this->demande_demandeurs->add($demande_demandeur);
+            $demande_demandeur->setUtilisateur($this);
         }
 
         return $this;
     }
 
-    public function removeDemande(DemandeTerrain $demande): static
+    public function removedemande_demandeur(Request $demande_demandeur): static
     {
-        if ($this->demandes->removeElement($demande)) {
+        if ($this->demande_demandeurs->removeElement($demande_demandeur)) {
             // set the owning side to null (unless already changed)
-            if ($demande->getUtilisateur() === $this) {
-                $demande->setUtilisateur(null);
+            if ($demande_demandeur->getUtilisateur() === $this) {
+                $demande_demandeur->setUtilisateur(null);
             }
         }
-
         return $this;
     }
 
@@ -673,6 +705,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             'numeroElecteur' => $this->getNumeroElecteur() ?? null,
             'profession' => $this->getProfession(),
             'isHabitant' => $this->isHabitant(),
+            'nombreEnfant' => $this->getNombreEnfant(),
+            'situationMatrimoniale' => $this->getSituationMatrimoniale(),
+            'situationDemandeur'=> $this->getSituationDemandeur(),
         ];
     }
 
@@ -738,17 +773,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setSituationMatrimoniale(?string $situationMatrimoniale): static
     {
+        if ($situationMatrimoniale === null) {
+            $this->situationMatrimoniale = null;
+            return $this;
+        }
+        if (
+            !in_array(
+                $situationMatrimoniale,
 
-        if (!in_array(
-            $situationMatrimoniale,
-
-            [
-                self::SITATION_MATRIMONIALE_CELIBATAIRE,
-                self::SITATION_MATRIMONIALE_MARIE,
-                self::SITATION_MATRIMONIALE_DIVORCE,
-                self::SITATION_MATRIMONIALE_VEUF,
-            ]
-        )) {
+                [
+                    self::SITATION_MATRIMONIALE_CELIBATAIRE,
+                    self::SITATION_MATRIMONIALE_MARIE,
+                    self::SITATION_MATRIMONIALE_DIVORCE,
+                    self::SITATION_MATRIMONIALE_VEUF,
+                ]
+            )
+        ) {
             throw new \InvalidArgumentException("Type de document invalide: " . $situationMatrimoniale);
         }
 
@@ -795,6 +835,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $parcelle->setProprietaire(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getSituationdemande_demandeurur(): ?string
+    {
+        return $this->situationdemande_demandeurur;
+    }
+
+    public function setSituationdemande_demandeurur(?string $situationdemande_demandeurur): static
+    {
+
+        if ($situationdemande_demandeurur === null) {
+            $this->situationdemande_demandeurur = null;
+            return $this;
+        }
+        if (
+            !in_array(
+                $situationdemande_demandeurur,
+
+                [
+                    self::SITUATION_demande_demandeurUR_PROPRIETAIRE,
+                    self::SITUATION_demande_demandeurUR_LOCATAIRE,
+                    self::SITUATION_demande_demandeurUR_HEBERGER,
+                ]
+            )
+        ) {
+            throw new \InvalidArgumentException("Type Situation de demande_demandeurur invalide: " . $situationdemande_demandeurur);
+        }
+        $this->situationdemande_demandeurur = $situationdemande_demandeurur;
+
+        return $this;
+    }
+
+    public function getSituationDemandeur(): ?string
+    {
+        return $this->situationDemandeur;
+    }
+
+    public function setSituationDemandeur(?string $situationDemandeur): static
+    {
+        $this->situationDemandeur = $situationDemandeur;
 
         return $this;
     }
