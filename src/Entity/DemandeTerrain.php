@@ -3,25 +3,23 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Controller\DemandeController;
+use App\Controller\DemandeWorkflowController;
 use App\Repository\DemandeTerrainRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
+use ApiPlatform\Metadata\Post;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use Doctrine\DBAL\Types\TextType;
-use Dom\Text;
-use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Annotation\MaxDepth;
-
+use ApiPlatform\Metadata\Patch;
 
 
 #[ORM\Entity(repositoryClass: DemandeTerrainRepository::class)]
-
+#[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     normalizationContext: [
         'groups' => ['demande:item', 'demande:list'],
@@ -34,8 +32,47 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
     paginationMaximumItemsPerPage: 50,
     paginationClientEnabled: true,
     paginationClientItemsPerPage: true,
+    operations: [
+        // Endpoints “standards”
+        new Get(normalizationContext: ['groups' => ['demande:item']]),
+        new GetCollection(normalizationContext: ['groups' => ['demande:list']]),
+        new Post(denormalizationContext: ['groups' => ['demande:write']]),
+        new Patch(denormalizationContext: ['groups' => ['demande:write']]),
+
+        // Endpoints workflow custom
+        new Post(
+            uriTemplate: '/demandes/{id}/rapport',
+            controller: DemandeWorkflowController::class . '::setRapport',
+            denormalizationContext: ['groups' => ['demande:write']],
+            security: "is_granted('ROLE_AGENT')",
+            name: 'demande_set_rapport'
+        ),
+        new Post(
+            uriTemplate: '/demandes/{id}/recommandation',
+            controller: DemandeWorkflowController::class . '::setRecommandation',
+            security: "is_granted('ROLE_PRESIDENT_COMMISSION') or is_granted('ROLE_CHEF_SERVICE')",
+            name: 'demande_set_recommandation'
+        ),
+        new Post(
+            uriTemplate: '/demandes/{id}/decision',
+            controller: DemandeWorkflowController::class . '::setDecision',
+            security: "is_granted('ROLE_COMMISSION')",
+            name: 'demande_set_decision'
+        ),
+        new Post(
+            uriTemplate: '/demandes/{id}/valider',
+            controller: DemandeWorkflowController::class . '::validerEtape',
+            name: 'demande_valider'
+        ),
+        new Post(
+            uriTemplate: '/demandes/{id}/rejeter',
+            controller: DemandeWorkflowController::class . '::rejeter',
+            name: 'demande_rejeter'
+        ),
+    ]
 )]
 #[ORM\Table(name: '`gs_mairie_demande_terrains`')]
+
 class DemandeTerrain
 {
 
@@ -45,17 +82,14 @@ class DemandeTerrain
     const STATUT_EN_ATTENTE = 'En attente';
     const STATUT_EN_COURS_TRAITEMENT = 'En cours de traitement';
 
-
     const PERMIS_OCCUPATION  = "Permis d'occuper";
     const BAIL_COMMUNAL = "Bail communal";
     const PROPOSITION_BAIL = "Proposition de bail";
     const TRANSFERT_DEFINITIF = "Transfert définitif";
 
-
     const TYPE_DEMANDE_ATTRIBUTION = "Attribution";
     const TYPE_DEMANDE_REGULARISATION = "Régularisation";
     const TYPE_DEMANDE_AUTHENTIFICATION = "Authentification";
-
 
 
 
@@ -313,8 +347,13 @@ class DemandeTerrain
 
     public function toArray(): array
     {
-        return [
 
+         $historiques = [];
+        foreach ($this->getHistoriqueValidations() as $historique) {
+            $historiques[] = $historique->toArray();
+        }
+
+        return [
             'id' => $this->getId(),
             'typeDemande' => $this->getTypeDemande(),
             'typeDocument' => $this->getTypeDocument(),
@@ -326,6 +365,17 @@ class DemandeTerrain
             'dateModification' => $this->getDateModification()?->format('Y-m-d H:i:s'),
             'motif_refus' => $this->getMotifRefus(),
             'document' => $this->getDocument(),
+            'recto' => $this->getRecto(),
+            'verso' => $this->getVerso(),
+            'rapport'=> $this->getRapport(),
+            'typeTitre'=> $this->getTypeTitre(),
+            'niveauValidationActuel' => $this->getNiveauValidationActuel() ? $this->getNiveauValidationActuel()->toArray() :  null,
+            'historiqueValidations'=> $historiques,
+            'terrainAKaolack'=> $this->isTerrainAKaolack(),
+            'terrainAilleurs' => $this->isTerrainAilleurs(),
+            'decisionCommission' => $this->getDecisionCommission(),
+            'recommandation' => $this->getRecommandation(),
+
             'demandeur' => $this->getUtilisateur() ? [
                 'id' => $this->getUtilisateur()->getId(),
                 'nom' => $this->getUtilisateur()->getNom(),
@@ -341,7 +391,36 @@ class DemandeTerrain
             'localite' => $this->getLocalite() ? [
                 'id' => $this->getLocalite()->getId(),
                 'nom' => $this->getLocalite()->getNom(),
+                'prix' => $this->getLocalite()->getPrix(),
+                'longitude' => $this->getLocalite()->getLongitude(),
+                'latitude' => $this->getLocalite()->getLatitude(),
+                'description' => $this->getLocalite()->getDescription(),
             ] : null
+        ];
+    }
+
+    public function toArraySimple(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'typeDemande' => $this->getTypeDemande(),
+            'typeDocument' => $this->getTypeDocument(),
+            'superficie' => $this->getSuperficie(),
+            'usagePrevu' => $this->getUsagePrevu(),
+            'possedeAutreTerrain' => $this->isPossedeAutreTerrain(),
+            'statut' => $this->getStatut(),
+            'dateCreation' => $this->getDateCreation()?->format('Y-m-d H:i:s'),
+            'dateModification' => $this->getDateModification()?->format('Y-m-d H:i:s'),
+            'motif_refus' => $this->getMotifRefus(),
+            'document' => $this->getDocument(),
+            'recto' => $this->getRecto(),
+            'verso' => $this->getVerso(),
+            'rapport'=> $this->getRapport(),
+            'typeTitre'=> $this->getTypeTitre(),
+            'terrainAKaolack'=> $this->isTerrainAKaolack(),
+            'terrainAilleurs' => $this->isTerrainAilleurs(),
+            'decisionCommission' => $this->getDecisionCommission(),
+            'recommandation' => $this->getRecommandation(),
         ];
     }
 
@@ -512,6 +591,18 @@ class DemandeTerrain
     public function setRecommandation(?string $recommandation): static
     {
         $this->recommandation = $recommandation;
+
+        return $this;
+    }
+
+    public function removeHistoriqueValidation(HistoriqueValidation $historiqueValidation): static
+    {
+        if ($this->historiqueValidations->removeElement($historiqueValidation)) {
+            // set the owning side to null (unless already changed)
+            if ($historiqueValidation->getDemande() === $this) {
+                $historiqueValidation->setDemande(null);
+            }
+        }
 
         return $this;
     }

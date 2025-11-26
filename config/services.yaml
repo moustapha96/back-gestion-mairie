@@ -74,8 +74,4 @@ services:
     #         $resetPasswordHelper: '@symfonycasts.reset_password.helper'
     #         $mailer: '@mailer'
 
-    # App\EventListener\ResponseListener:
-    #     tags:
-    #         - { name: kernel.event_listener, event: kernel.view, method: onKernelView }
-    #         - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
 

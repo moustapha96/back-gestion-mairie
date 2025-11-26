@@ -12,39 +12,53 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/historiques')]
 class HistoriqueValidationController extends AbstractController
 {
-    public function __construct(private HistoriqueValidationService $svc) {}
+    public function __construct(private HistoriqueValidationService $svc)
+    {
+    }
 
     #[Route('', methods: ['GET'])]
     public function list(Request $r): Response
     {
         $filters = [
-            'demandeId'   => $r->query->get('demandeId'),
+            'demandeId' => $r->query->get('demandeId'),
             'validateurId' => $r->query->get('validateurId'),
-            'action'      => $r->query->get('action'),
-            'from'        => $r->query->get('from'),
-            'to'          => $r->query->get('to'),
+            'action' => $r->query->get('action'),
+            'from' => $r->query->get('from'),
+            'to' => $r->query->get('to'),
         ];
-        $page     = max(1, (int)$r->query->get('page', 1));
-        $pageSize = min(200, max(1, (int)$r->query->get('pageSize', 10)));
+        $page = max(1, (int) $r->query->get('page', 1));
+        $pageSize = min(200, max(1, (int) $r->query->get('pageSize', 10)));
 
         $res = $this->svc->searchPaginated($filters, $page, $pageSize);
 
         return $this->json([
             'success' => true,
-            'items'  => array_map([$this, 'toArray'], $res['items']),
-            'total'  => $res['total'],
-            'page'   => $page,
+            'items' => array_map([$this, 'toArray'], $res['items']),
+            'total' => $res['total'],
+            'page' => $page,
             'pageSize' => $pageSize,
         ]);
     }
 
-    #[Route('', methods: ['POST'])]
-    public function create(Request $r): Response
+
+    #[Route('', name: 'historique_create', methods: ['POST'])]
+    public function create(Request $r, HistoriqueValidationService $svc): Response
     {
         $data = json_decode($r->getContent(), true) ?? [];
-        $item = $this->svc->create($data);
-        return $this->json(['success' => true, 'item' => $this->toArray($item)], Response::HTTP_CREATED);
+
+        try {
+            $item = $svc->create($data);
+            return $this->json(
+                ['success' => true, 'item' => $item->toArray()],
+                Response::HTTP_CREATED
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['success' => false, 'error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'error' => 'Erreur serveur'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     #[Route('/{id}', methods: ['DELETE'])]
     public function delete(HistoriqueValidation $h): Response
@@ -56,17 +70,15 @@ class HistoriqueValidationController extends AbstractController
     private function toArray(HistoriqueValidation $h): array
     {
         return [
-            'id'        => $h->getId(),
-            'action'    => $h->getAction(),
-            'motif'     => $h->getMotif(),
+            'id' => $h->getId(),
+            'action' => $h->getAction(),
+            'motif' => $h->getMotif(),
             'dateAction' => $h->getDateAction()?->format('Y-m-d H:i:s'),
-            'demande'   => $h->getDemande() ? [
-                'id' => $h->getDemande()->getId(),
-                // Ajoute ici 'reference' si ta DemandeTerrain l’expose
-            ] : null,
+            'demande' => $h->getDemande() ? $h->getDemande()->toArray() : null,
             'validateur' => $h->getValidateur() ? [
                 'id' => $h->getValidateur()->getId(),
-                'fullName' => method_exists($h->getValidateur(), 'getFullName') ? $h->getValidateur()->getRoles() : null,
+                'prenom' => method_exists($h->getValidateur(), 'getPrenom') ? $h->getValidateur()->getPrenom() : null,
+                'nom' => method_exists($h->getValidateur(), 'getNom') ? $h->getValidateur()->getNom() : null,
                 'email' => method_exists($h->getValidateur(), 'getEmail') ? $h->getValidateur()->getEmail() : null,
             ] : null,
         ];

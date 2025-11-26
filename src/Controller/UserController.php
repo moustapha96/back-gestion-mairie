@@ -67,8 +67,13 @@ class UserController extends AbstractController
                 'roles' => $u->getRoles(),
                 'enabled' => $u->isEnabled(),
                 'activated' => $u->isActiveted(),
+                'nombre' => $u->getAdresse(),
                 'isHabitant' => $u->isHabitant(),
-                'demandes' => \count($u->getDemandes()), // nombre
+                'demandes' => \count($u->getDemandes()),
+                'numeroElecteur' => $u->getNumeroElecteur(),
+                'profession' => $u->getProfession(),
+                'situationMatrimoniale' => $u->getSituationMatrimoniale(),
+                'nombreEnfant' => $u->getNombreEnfant(),
             ];
         }, $result['items']);
 
@@ -218,7 +223,7 @@ class UserController extends AbstractController
         return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
     }
 
-   
+
     #[Route('/api/user/update-profile/{id}', name: 'api_users_mise_a_jour_compte', methods: ['PUT'])]
     public function modifierCompte(
         Request $request,
@@ -271,7 +276,7 @@ class UserController extends AbstractController
         $user->setLieuNaissance($lieuNaissance);
         $user->setNumeroElecteur($numeroElecteur);
         $user->setNombreEnfant($nombreEnfant);
-        $user->setSituationMatrimoniale ($situationMatrimoniale);
+        $user->setSituationMatrimoniale($situationMatrimoniale);
         $user->setProfession($profession);
 
 
@@ -297,6 +302,9 @@ class UserController extends AbstractController
             'roles' => $user->getRoles(),
             'enabled' => $user->isEnabled(),
             'activated' => $user->isActiveted(),
+            'situationMatrimoniale' => $user->getSituationMatrimoniale(),
+            'profession' => $user->getProfession(),
+            'nombreEnfant' => $user->getProfession(),
         ], Response::HTTP_OK);
     }
 
@@ -336,6 +344,9 @@ class UserController extends AbstractController
         $user->setLieuNaissance($data['lieuNaissance']);
         $user->setDateNaissance(new \DateTime($data['dateNaissance']));
         $user->setNumeroElecteur($data['numeroElecteur'] ?? null);
+        $user->setNombreEnfant($data['nombreEnfant'] ?? null);
+        $user->setSituationMatrimoniale($data['situationMatrimoniale'] ?? null);
+
         $resultat = $this->fonctionsService->checkNumeroElecteurExist($data['numeroElecteur']);
         $user->setHabitant($resultat ?? false);
 
@@ -633,7 +644,7 @@ class UserController extends AbstractController
                 'isHabitant' => $fonctionsService->checkNumeroElecteurExist($user->getNumeroElecteur()),
                 // 'demandes' => $user->getDemandes(),
                 'demandes' => count($user->getDemandes()),
-                'parcelles'=> count($user->getParcelles()),
+                'parcelles' => count($user->getParcelles()),
                 'passwordClaire' => $user->getPasswordClaire(),
                 // 'avatar' => $user->getAvatar(),
             ];

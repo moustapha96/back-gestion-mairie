@@ -78,4 +78,13 @@ class NiveauValidation
 
         return $this;
     }
+
+    public function toArray(): array{
+        return [
+            'id' => $this->getId(),
+            'nom' => $this->getNom(),
+            'role'=> $this->getRoleRequis(),
+            'ordre' => $this->getOrdre(),
+        ];
+    }
 }

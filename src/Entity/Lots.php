@@ -170,4 +170,16 @@ class Lots
             'longitude' => $this->getLongitude(),
         ];
     }
+
+    public function getTypeUsage(): ?string
+    {
+        return $this->typeUsage;
+    }
+
+    public function setTypeUsage(?string $typeUsage): static
+    {
+        $this->typeUsage = $typeUsage;
+
+        return $this;
+    }
 }

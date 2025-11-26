@@ -163,3 +163,13 @@ php bin/console doctrine:migrations:diff
 
 php bin/console doctrine:migrations:migrate
 
+
+
+-------------------------------------------
+
+# désactive Xdebug pour aller plus vite
+$env:XDEBUG_MODE="off"
+
+# régénère les paires RSA 4096 avec ta passphrase
+php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
+

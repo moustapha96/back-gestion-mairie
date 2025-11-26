@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Entity\DemandeTerrain;
 use App\Entity\User;
 use App\Entity\DocumentGenere;
+use App\Entity\HistoriqueValidation;
 use App\Repository\AuditLogRepository;
 use App\Repository\DemandeTerrainRepository;
+use App\Repository\HistoriqueValidationRepository;
 use App\Repository\LocaliteRepository;
 use App\Repository\NiveauValidationRepository;
 use App\Repository\UserRepository;
@@ -609,6 +611,11 @@ class DemandeController extends AbstractController
             $this->em->initializeObject($localite);
         }
 
+        $historiques = [];
+        foreach ($demande->getHistoriqueValidations() as $historique) {
+            $historiques[] = $historique->toArray();
+        }
+
         $resultats = [
             'id' => $demande->getId(),
             'typeDemande' => $demande->getTypeDemande(),
@@ -623,6 +630,14 @@ class DemandeController extends AbstractController
             'dateCreation' => $demande->getDateCreation()?->format('Y-m-d H:i:s'),
             'dateModification' => $demande->getDateModification()?->format('Y-m-d H:i:s'),
             'document' => $demande->getDocument(),
+            'rapport'=> $demande->getRapport(),
+            'typeTitre'=> $demande->getTypeTitre(),
+            'niveauValidationActuel' => $demande->getNiveauValidationActuel() ? $demande->getNiveauValidationActuel()->toArray() :  null,
+            'historiqueValidations'=> $historiques,
+            'terrainAKaolack'=> $demande->isTerrainAKaolack(),
+            'terrainAilleurs' => $demande->isTerrainAilleurs(),
+            'decisionCommission' => $demande->getDecisionCommission(),
+            'recommandation' => $demande->getRecommandation(),
 
             'demandeur' => $demande->getUtilisateur() ? [
                 'id' => $demande->getUtilisateur()->getId(),
@@ -804,161 +819,6 @@ class DemandeController extends AbstractController
     {
         return preg_replace('/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/', '', $text);
     }
-
-
-
-    #[Route('/api/demande/import', name: 'api_demande_import', methods: ['POST'])]
-    public function importerDemandes(
-        Request $request,
-        FonctionsService $fonctionsService,
-        LocaliteRepository $localiteRepository,
-        UserRepository $userRepository
-    ): Response {
-        $file = $request->files->get('file');
-        if (!$file) {
-            return $this->json(['error' => 'Fichier non trouvé'], Response::HTTP_NOT_FOUND);
-        }
-
-        if ($file->getClientOriginalExtension() !== 'xlsx') {
-            return $this->json(['error' => 'Format de fichier incorrect'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $expectedHeaders = [
-            'CNI',
-            'Email',
-            'Nom',
-            'Prenom',
-            'Telephone',
-            'Adresse',
-            'Lieu de Naissance',
-            'Date de Naissance',
-            'Profession',
-            'Type de demande',
-            'Localite',
-            'Superficie',
-            'Usage prevu',
-            'Date Demande'
-        ];
-
-        try {
-            // Lire le fichier Excel
-            $spreadsheet = IOFactory::load($file->getPathname());
-            $worksheet = $spreadsheet->getActiveSheet();
-            $rows = $worksheet->toArray();
-
-            if (empty($rows)) {
-                return $this->json(['error' => 'Le fichier est vide'], Response::HTTP_BAD_REQUEST);
-            }
-
-            // Lecture de l'en-tête
-            $headers = array_shift($rows);
-
-            if (array_diff($expectedHeaders, $headers)) {
-                return $this->json([
-                    'error' => 'Format de fichier incorrect',
-                    'attendu' => $expectedHeaders,
-                    'reçu' => $headers
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            $batchSize = 20;
-            $count = 0;
-
-            foreach ($rows as $row) {
-                if (count($row) < count($expectedHeaders)) {
-                    continue; // Ignore les lignes incomplètes
-                }
-
-                [
-                    $cni,
-                    $email,
-                    $nom,
-                    $prenom,
-                    $telephone,
-                    $adresse,
-                    $lieuDeNaissance,
-                    $dateNaissance,
-                    $profession,
-                    $typeDemande,
-                    $localite,
-                    $superficie,
-                    $usagePrevu,
-                    $dateDemande
-                ] = $row;
-
-                // Vérification et normalisation des données
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL) || empty($cni) || empty($nom) || empty($localite)) {
-                    continue;
-                }
-
-                $localiteTrouve = $localiteRepository->findOneBy(['nom' => $localite]);
-                if (!$localiteTrouve) {
-                    continue;
-                }
-
-                $utilisateur = $userRepository->findOneBy(['email' => $email, 'numeroElecteur' => $cni]);
-                if (!$utilisateur) {
-                    $utilisateur = new User();
-                    $utilisateur->setNom($nom);
-                    $utilisateur->setEmail($email);
-                    $utilisateur->setPrenom($prenom);
-                    $utilisateur->setAdresse($adresse);
-                    $utilisateur->setTelephone($telephone);
-                    $utilisateur->setProfession($profession);
-                    $utilisateur->setNumeroElecteur($cni);
-                    $utilisateur->setLieuNaissance($lieuDeNaissance);
-                    $utilisateur->setDateNaissance(new \DateTime($dateNaissance));
-                    $utilisateur->setEnabled(true);
-                    $utilisateur->setActiveted(false);
-                    $utilisateur->setRoles(User::ROLE_DEMANDEUR);
-                    $passwordGenere = $utilisateur->generatePassword(8);
-                    $utilisateur->setPassword(password_hash($passwordGenere, PASSWORD_BCRYPT));
-                    $utilisateur->setPasswordClaire($passwordGenere);
-                    $utilisateur->setTokenActiveted(bin2hex(random_bytes(32)));
-                    $utilisateur->setUsername($email);
-
-                    // VERIFIER SI C'EST UN HABITANT
-                    $resultat = $fonctionsService->checkNumeroElecteurExist($cni);
-                    $utilisateur->setHabitant($resultat ?? false);
-                    $this->em->persist($utilisateur);
-                }
-
-                $demande = new DemandeTerrain();
-                $demande->setLocalite($localiteTrouve);
-                $demande->setSuperficie($superficie);
-                $demande->setTypeDemande($typeDemande);
-                $demande->setUsagePrevu($usagePrevu);
-                $demande->setDateCreation(new \DateTime($dateDemande));
-                $demande->setDateModification(new \DateTime($dateDemande));
-                $demande->setStatut(DemandeTerrain::STATUT_EN_ATTENTE);
-                $demande->setPossedeAutreTerrain(false);
-                $demande->setTypeDocument('CNI');
-                $demande->setDocumentGenerer(null);
-                $demande->setUtilisateur($utilisateur);
-                $demande->setRecto(null);
-                $demande->setVerso(null);
-
-                // $documentGenere = $this->genererDocument($demande);
-                // $documentGenere->setDemandeTerrain($demande);
-                // $this->em->persist($documentGenere);
-                // $demande->setDocumentGenerer($documentGenere);
-
-                $this->em->persist($demande);
-                if (($count % $batchSize) === 0) {
-                    $this->em->flush();
-                    $this->em->clear();
-                }
-                $count++;
-            }
-
-            $this->em->flush();
-
-            return $this->json(['message' => 'Importation terminée', 'total' => $count], Response::HTTP_OK);
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Erreur lors de l\'importation : ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
 
 
     #[Route('/api/demande/demandeur/{id}/liste', name: 'api_demande_demandeur_liste', methods: ['GET'])]
@@ -1584,7 +1444,8 @@ class DemandeController extends AbstractController
     public function updateRapport(
         int $id,
         Request $request,
-        DemandeTerrainRepository $demandeRepository
+        DemandeTerrainRepository $demandeRepository,
+        HistoriqueValidationRepository $historiqueValidationRepository
     ): Response {
         $demande = $demandeRepository->find($id);
         if (!$demande) {
@@ -1596,12 +1457,34 @@ class DemandeController extends AbstractController
         if (!isset($data['rapport']) || empty($data['rapport'])) {
             return $this->json(['message' => 'Le rapport est requis et ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
         }
-
+        $userId = $data['userId'];
+        $user = $this->em->getRepository(User::class)->find($userId);
+        if (!$user){
+            return $this->json(['message' => 'Utilisateur non trouvée'], Response::HTTP_NOT_FOUND);
+        }
         $demande->setRapport($data['rapport']);
         $demande->setDateModification(new \DateTime());
 
         $this->em->persist($demande);
+
+        $historiqueExistant = $historiqueValidationRepository
+                    ->findOneBy(['demande' => $demande, 'validateur' => $user]);
+
+        if (!$historiqueExistant) {
+            $historique = new HistoriqueValidation();
+            $historique->setDemande($demande);
+            $historique->setAction('VALIDER');
+            $historique->setValidateur($user);
+            $this->em->persist($historique);
+          
+        }else{
+            $historiqueExistant->setDemande($demande);
+            $historiqueExistant->setValidateur($user);
+            $historiqueExistant->setAction('VALIDER');
+            $this->em->persist($historiqueExistant);
+        }
         $this->em->flush();
+
 
         return $this->json([
             'message' => 'Rapport mis à jour avec succès',
