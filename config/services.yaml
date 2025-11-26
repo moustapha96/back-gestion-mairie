@@ -11,6 +11,9 @@ parameters:
     images_directory: '%kernel.project_dir%/public/images'
     plan_directory: '%kernel.project_dir%/public/plans'
     key_path: '%kernel.project_dir%/config/key.txt'
+    tfs_directory: '%kernel.project_dir%/public/tfs'
+
+    asset.base_url: '%env(string:ASSET_BASE_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -67,11 +70,17 @@ services:
         autowire: true
         autoconfigure: true
 
-    # App\services\ResetPassworService:
-    #     arguments:
-    #         $userRepository: '@App\Repository\UserRepository'
-    #         $entityManager: '@doctrine.orm.entity_manager'
-    #         $resetPasswordHelper: '@symfonycasts.reset_password.helper'
-    #         $mailer: '@mailer'
+    App\Controller\TitreFoncierController:
+        arguments:
+            $fileBaseUrl: '%asset.base_url%'
+
+
+    App\Controller\RequestController:
+        arguments:
+            $fileBaseUrl: '%asset.base_url%'
+
+    App\Controller\UserController:
+        arguments:
+            $fileBaseUrl: '%asset.base_url%'
 
 

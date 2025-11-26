@@ -185,4 +185,22 @@ class LotissementController extends AbstractController
 
         return $this->json("Statut mis à jour", Response::HTTP_OK);
     }
+
+    #[Route('/api/lotissement/{id}/delete', name: 'api_lotissement_delete', methods: ['DELETE'])]
+    public function deleteLotissement(int $id, LotissementRepository $lotissementRepository): Response
+    {
+        $lotissement = $lotissementRepository->find($id);
+        if (!$lotissement) {
+            return $this->json(['error' => 'Lotissement not found'], Response::HTTP_NOT_FOUND);
+        }
+        if( $lotissement->getLots()->count() > 0) {
+            return $this->json('Ce Lotissement contient des ilots', Response::HTTP_CONFLICT);
+        }
+
+        $this->em->remove($lotissement);
+        $this->em->flush();
+
+        return $this->json("Lotissement supprimée", Response::HTTP_NO_CONTENT);
+    }
+
 }

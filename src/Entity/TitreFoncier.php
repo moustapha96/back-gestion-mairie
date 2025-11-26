@@ -47,14 +47,14 @@ class TitreFoncier
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $etatDroitReel = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $numeroLot = null;
-
     #[ORM\ManyToOne(inversedBy: 'titreFonciers')]
     private ?Localite $quartier = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $type = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fichier = null;
 
     public function getId(): ?int
     {
@@ -109,18 +109,6 @@ class TitreFoncier
         return $this;
     }
 
-    public function getNumeroLot(): ?string
-    {
-        return $this->numeroLot;
-    }
-
-    public function setNumeroLot(?string $numeroLot): static
-    {
-        $this->numeroLot = $numeroLot;
-
-        return $this;
-    }
-
     public function getQuartier(): ?Localite
     {
         return $this->quartier;
@@ -152,6 +140,18 @@ class TitreFoncier
             throw new \InvalidArgumentException("Type de titre invalide: " . $type);
         }
         $this->type = $type;
+        return $this;
+    }
+
+    public function getFichier(): ?string
+    {
+        return $this->fichier;
+    }
+
+    public function setFichier(?string $fichier): static
+    {
+        $this->fichier = $fichier;
+
         return $this;
     }
 }

@@ -2,18 +2,14 @@
 
 namespace App\Controller;
 
-use App\Entity\DemandeTerrain;
 use App\Entity\Localite;
-use App\Repository\DemandeTerrainRepository;
 use App\Repository\LocaliteRepository;
-use App\Repository\LotissementRepository;
+use App\Repository\RequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 
@@ -133,8 +129,17 @@ class LocaliteController extends AbstractController
     }
 
     #[Route('/api/localite/{id}/delete', name: 'api_localite_delete', methods: ['DELETE'])]
-    public function delete(Localite $localite, EntityManagerInterface $em): Response
+    public function delete($id, LocaliteRepository $localiteRepository, EntityManagerInterface $em): Response
     {
+        $localite = $localiteRepository->find($id);
+        if (!$localite) {
+            return $this->json(['message' => 'Localité non trouvée'], 404);
+        }
+        
+        if( $localite->getLotissements()->count() > 0){
+            return $this->json('Quartié non supprimée car elle contient des lotissements', Response::HTTP_CONFLICT);
+        }
+
         $em->remove($localite);
         $em->flush();
 
@@ -200,19 +205,19 @@ class LocaliteController extends AbstractController
 
 
     #[Route('/api/localite/{demandeId}/details-confirmation', name: 'api_localite_show_confirmation_details', methods: ['GET'])]
-    public function detailsConfirmationTwo($demandeId, DemandeTerrainRepository $demandeTerrainRepository): Response
+    public function detailsConfirmationTwo($demandeId, RequestRepository $demandeRepository): Response
     {
         try {
             // 1. Récupération de la demande
-            $demande = $demandeTerrainRepository->find($demandeId);
+            $demande = $demandeRepository->find($demandeId);
             if (!$demande) {
                 return $this->json(['message' => 'Demande non trouvée'], 404);
             }
 
             // 2. Vérification de l'existence de la localité
-            $localite = $demande->getLocalite();
+            $localite = $demande->getQuartier();
             if (!$localite) {
-                return $this->json(['message' => 'Localité non trouvée'], 404);
+                return $this->json(['message' => 'Quartier non trouvée'], 404);
             }
 
             // 3. Préparation des données de la localité

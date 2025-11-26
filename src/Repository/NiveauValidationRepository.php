@@ -29,29 +29,35 @@ class NiveauValidationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    
-//    /**
-//     * @return NiveauValidation[] Returns an array of NiveauValidation objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('n')
-//            ->andWhere('n.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('n.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findFirst(): ?NiveauValidation
+    {
+        return $this->createQueryBuilder('n')
+            ->orderBy('n.ordre', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 
-//    public function findOneBySomeField($value): ?NiveauValidation
-//    {
-//        return $this->createQueryBuilder('n')
-//            ->andWhere('n.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+     /** Niveau suivant (ordre strictement supérieur au courant) */
+    public function findNext(int $currentOrdre): ?NiveauValidation
+    {
+        return $this->createQueryBuilder('n')
+            ->andWhere('n.ordre > :o')->setParameter('o', $currentOrdre)
+            ->orderBy('n.ordre', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /** Niveau précédent (ordre strictement inférieur au courant) */
+    public function findPrevious(int $currentOrdre): ?NiveauValidation
+    {
+        return $this->createQueryBuilder('n')
+            ->andWhere('n.ordre < :o')->setParameter('o', $currentOrdre)
+            ->orderBy('n.ordre', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+    
 }

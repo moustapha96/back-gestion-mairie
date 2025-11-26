@@ -3,42 +3,16 @@
 
 namespace App\Controller;
 
-use App\EventListener\DemandeTerrainListener;
-use App\Repository\DemandeTerrainRepository;
-use App\Repository\DocumentGenereRepository;
 use App\Repository\LocaliteRepository;
+use App\Repository\RequestRepository;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
-use Dom\Document;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class DocumentController extends AbstractController
 {
 
-    #[Route('/document/{documentId}/signature', name: 'app_document_signer', methods: ['GET'])]
-    public function signerDocument(int $documentId, Request $request, DocumentGenereRepository $documentGenereRepository): Response
-    {
-        $document = $documentGenereRepository->find($documentId);
-
-        if (!$document) {
-            throw $this->createNotFoundException('Document non trouvé');
-        }
-
-        $user = $this->getUser();  // Récupérer l'utilisateur connecté
-
-        $signature = $request->request->get('signature');  // Signature envoyée via une requête
-
-        // Ajouter la signature au document
-        $ordre = count($document->getSignatures()) + 1;  // Ordre basé sur le nombre de signatures existantes
-        $document->ajouterSignature($user, $signature, $ordre);
-
-        $documentGenereRepository->save($document);
-
-        return new Response('Document signé', Response::HTTP_OK);
-    }
 
 
 
@@ -46,7 +20,7 @@ class DocumentController extends AbstractController
     public function documentsUtilisateurs(
         int $id,
         UserRepository $userRepository,
-        DemandeTerrainRepository $demandeTerrainRepository,
+        RequestRepository $demandeRepository,
     ): Response {
         // Vérifier si l'utilisateur existe
         $user = $userRepository->find($id);
@@ -60,7 +34,7 @@ class DocumentController extends AbstractController
         }
 
         // Récupérer les demandes avec les documents générés
-        $demandes = $demandeTerrainRepository->findBy(['utilisateur' => $id]);
+        $demandes = $demandeRepository->findBy(['utilisateur' => $id]);
 
         $documents = [];
         foreach ($demandes as $demande) {
@@ -101,7 +75,7 @@ class DocumentController extends AbstractController
     public function documentsUtilisateur(
         int $id,
         UserRepository $userRepository,
-        DemandeTerrainRepository $demandeTerrainRepository,
+        RequestRepository $demandeRepository,
         LocaliteRepository $localiteRepository
     ): Response {
 
@@ -113,7 +87,7 @@ class DocumentController extends AbstractController
         }
 
         // Récupérer les demandes avec les documents générés
-        $demandes = $demandeTerrainRepository->findBy(['utilisateur' => $id]);
+        $demandes = $demandeRepository->findBy(['utilisateur' => $id]);
 
         $documents = [];
         foreach ($demandes as $demande) {
@@ -147,18 +121,17 @@ class DocumentController extends AbstractController
 
     #[Route('/api/document/liste', name: 'api_document_liste', methods: ['GET'])]
     public function documents(
-        UserRepository $userRepository,
-        DemandeTerrainRepository $demandeTerrainRepository,
+        RequestRepository $demandeRepository,
         LocaliteRepository $localiteRepository
     ): Response {
 
 
         // Récupérer les demandes avec les documents générés
-        $demandes = $demandeTerrainRepository->findAll();
+        $demandes = $demandeRepository->findAll();
 
         $documents = [];
         foreach ($demandes as $demande) {
-            $document = $demande->getDocumentGenerer();
+            $document = null;
             $localite = $localiteRepository->find($demande->getLocalite()->getId());
 
             if ($document) {

@@ -4,7 +4,7 @@
 // src/Controller/ValidationController.php
 namespace App\Controller;
 
-use App\Entity\DemandeTerrain;
+use App\Entity\Request as Demande;
 use App\services\ValidationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +16,7 @@ class ValidationController extends AbstractController
 {
     #[Route('/api/demandes/{id}/valider', name: 'valider_demande', methods: ['POST'])]
     public function validerDemande(
-        DemandeTerrain $demande,
+        Demande $demande,
         ValidationService $validationService,
         EntityManagerInterface $entityManager
     ): JsonResponse {
@@ -34,7 +34,7 @@ class ValidationController extends AbstractController
 
     #[Route('/api/demandes/{id}/rejeter', name: 'rejeter_demande', methods: ['POST'])]
     public function rejeterDemande(
-        DemandeTerrain $demande,
+        Demande $demande,
         ValidationService $validationService,
         Request $request
     ): JsonResponse {

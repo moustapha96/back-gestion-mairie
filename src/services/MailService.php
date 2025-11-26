@@ -3,7 +3,7 @@
 
 namespace App\services;
 
-use App\Entity\DemandeTerrain;
+use App\Entity\Request as Demande;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -26,13 +26,13 @@ class MailService extends AbstractController
         $this->config = $config;
         $this->mailer = $mailer;
         $this->userRepository = $userRepository;
-        $this->adminEmail = "" . $this->config->get("email") . "";
+        $this->adminEmail = "support@kaolackcommune.sn";
     }
 
     private function sendEmail(string $to, string $subject, string $template, array $context = []): void
     {
         $email = (new TemplatedEmail())
-            ->from(new Address($this->adminEmail, 'Mairie'))
+            ->from(addresses: new Address($this->adminEmail, "Mairie de Kaolack"))
             ->to($to)
             ->subject($subject)
             ->htmlTemplate($template)
@@ -62,7 +62,7 @@ class MailService extends AbstractController
 
     private function getEmailSender(): Address
     {
-        $emailbase = $this->config->get("email") ?? "alhusseinkhouma0@gmail.com";
+        $emailbase = $this->config->get("email") ?? "support@kaolackcommune.sn";
         $nombase = $this->config->get("titre") ?? "Gestion de la mairie";
         return new Address($emailbase, $nombase);
     }
@@ -95,7 +95,7 @@ class MailService extends AbstractController
 
 
 
-    public function sendConfirmationDemande(DemandeTerrain $demande): string
+    public function sendConfirmationDemande(Demande $demande): string
     {
         try {
             $emailSend = (new TemplatedEmail())
@@ -120,7 +120,7 @@ class MailService extends AbstractController
 
 
 
-    public function sendDemandeMail(DemandeTerrain $demande): string
+    public function sendDemandeMail(Demande $demande): string
     {
         try {
             $emailSend = (new TemplatedEmail())
@@ -142,7 +142,7 @@ class MailService extends AbstractController
         }
     }
 
-    public function sendStatusChangeMail(DemandeTerrain $demande): string
+    public function sendStatusChangeMail(Demande $demande): string
     {
         try {
             $emailSend = (new TemplatedEmail())
@@ -176,7 +176,7 @@ class MailService extends AbstractController
                     'user' => $user,
                     'password' => $password,
                     'token' => $user->getTokenActiveted(),
-                'activationUrl' => sprintf('%s/activate?token=%s', 'https://glotissement.kaolackcommune.sn/', $user->getTokenActiveted()),
+                    'activationUrl' => sprintf('%s/activate?token=%s', 'https://glotissement.kaolackcommune.sn', $user->getTokenActiveted()),
                     'name' => $user->getUsername(),
                     'prenom' => $user->getPrenom(),
                     'nom' => $user->getNom(),
@@ -248,7 +248,7 @@ class MailService extends AbstractController
             [
                 'status' => $statusText,
                 'user' => $user,
-                'activationUrl' => 'http://localhost:8000/auth/sign-in',
+                'activationUrl' => 'https://glotissement.kaolackcommune.sn/auth/sign-in',
             ]
         );
     }

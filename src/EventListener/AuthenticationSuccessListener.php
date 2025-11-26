@@ -28,14 +28,8 @@ class AuthenticationSuccessListener
 
         if ($user instanceof User) {
 
-            $demandes = [];
-            if ($user->getDemandes()->count() > 0) {
-                foreach ($user->getDemandes() as $value) {
-                    $demandes[] = $value->toArray();
-                }
-            }
 
-            $roles = in_array('ROLE_SUPER_ADMIN', $user->getRoles()) ? $user->getRoles() : $user->getRoles()[0];
+            $roles = in_array('ROLE_SUPER_ADMIN', $user->getRoles()) ? $user->getRoles() : $user->getRoles();
 
             $data['user'] = [
                 'roles' => $roles,
@@ -52,7 +46,7 @@ class AuthenticationSuccessListener
                 'lieuNaissance' => $user->getLieuNaissance(),
                 'dateNaissance' => $user->getDateNaissance(),
                 'numeroElecteur' => $user->getNumeroElecteur(),
-                'demande' => count($demandes) ,
+                'demande' => count($user->getdemande_demandeurs()) ,
                 'habitant' => $user->isHabitant(),
                 'situationMatrimoniale' => $user->getSituationMatrimoniale() ?? null,
                 'nombreEnfant' => $user->getNombreEnfant() ?? 0,

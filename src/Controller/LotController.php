@@ -93,10 +93,6 @@ class LotController extends AbstractController
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['numeroLot']) || !isset($data['statut']) || !isset($data['prix'])) {
-            return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
-        }
-
         $lotissement = $lotissementRepository->find($data['lotissementId']);
         if (!$lotissement) {
             return $this->json(['error' => 'Lotissement not found'], Response::HTTP_NOT_FOUND);
@@ -105,10 +101,10 @@ class LotController extends AbstractController
         // Création du lot
         $lot = new Lots();
         $lot->setNumeroLot($data['numeroLot']);
-        $lot->setPrix((float) $data['prix'] );
+        $lot->setPrix((float) $data['prix']);
         $lot->setUsage($data['usage'] ?? null);
         $lot->setSuperficie($data['superficie'] ?? null);
-        $lot->setStatut($data['statut']);
+        $lot->setStatut($data['statut'] ?? null);
         $lot->setLongitude($data['longitude'] ?? null);
         $lot->setLatitude($data['latitude'] ?? null);
         $lot->setLotissement($lotissement);
@@ -124,8 +120,7 @@ class LotController extends AbstractController
         Request $request,
         LotissementRepository $lotissementRepository,
         LotsRepository $lotsRepository
-    ): Response
-    {
+    ): Response {
         $lot = $lotsRepository->find($id);
 
         if (!$lot) {
@@ -147,17 +142,17 @@ class LotController extends AbstractController
         if ($data['statut']) {
             $lot->setStatut($data['statut']);
         }
-       
-        if ($data['prix']  ) {
+
+        if ($data['prix']) {
             $lot->setPrix($data['prix'] ? $data['prix'] : null);
         }
-        if ($data['longitude']){
+        if ($data['longitude']) {
             $lot->setLongitude($data['longitude'] ? $data['longitude'] : null);
         }
         if ($data['latitude']) {
             $lot->setLatitude($data['latitude'] ? $data['latitude'] : null);
         }
-        if ( isset($data['lotissementId']) &&  $data['lotissementId']) {
+        if (isset($data['lotissementId']) && $data['lotissementId']) {
             $lotissement = $lotissementRepository->find($data['lotissementId']);
             if (!$lotissement) {
                 return $this->json(['error' => 'lotissement not found'], Response::HTTP_NOT_FOUND);
@@ -188,5 +183,20 @@ class LotController extends AbstractController
         $this->em->flush();
 
         return $this->json("Statut mis à jour", Response::HTTP_OK);
+    }
+
+    #[Route("/api/lot/{id}/delete", name: "api_lot_delete", methods: ["DELETE"])]
+    public function deleteLot($id , LotsRepository $lotsRepository): Response
+    {
+        $lot = $lotsRepository->find($id);
+        if (!$lot) {
+            return $this->json(['error' => 'Lot not found'], Response::HTTP_NOT_FOUND);
+        }
+        if( $lot->getStatut() == 'Occupé'){
+            return $this->json(['error' => 'Lot vendu, impossible de le supprimer'], Response::HTTP_NOT_FOUND);
+        }
+        $this->em->remove($lot);
+        $this->em->flush();
+        return $this->json("ilot supprimé avec succés", Response::HTTP_OK);
     }
 }
