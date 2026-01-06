@@ -1,9 +1,11 @@
 <?php
+declare(strict_types=1);
+
 // src/Controller/DemandeImportController.php
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Entity\DemandeTerrain;
+use App\Entity\Request as DemandeTerrain;
 use App\Repository\UserRepository;
 use App\Repository\LocaliteRepository;
 use App\services\FonctionsService;
@@ -73,11 +75,11 @@ class DemandeImportController extends AbstractController
             $s = \trim($s);
             return \preg_replace('/\s+/', ' ', $s);
         };
-        $toBool = static function ($v): bool {
+        $toBool = static function (mixed $v): bool {
             $v = \strtolower((string) $v);
             return $v === 'oui' || $v === '1' || $v === 'true';
         };
-        $parseExcelDate = static function ($value): ?\DateTimeInterface {
+        $parseExcelDate = static function (mixed $value): ?\DateTimeInterface {
             // Accepte DateTime direct, string parsable, ou date Excel (numérique)
             if ($value instanceof \DateTimeInterface) {
                 return $value;
@@ -85,10 +87,11 @@ class DemandeImportController extends AbstractController
             if ($value === null || $value === '') {
                 return null;
             }
-            if (is_numeric($value)) {
+            if (\is_numeric($value)) {
                 // Excel base 1900
-                $unix = (int) round(((float)$value - 25569) * 86400);
-                return (new \DateTimeImmutable('@'.$unix))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                $unix = (int) \round(((float) $value - 25569) * 86400);
+                return (new \DateTimeImmutable('@' . $unix))
+                    ->setTimezone(new \DateTimeZone(\date_default_timezone_get()));
             }
             try {
                 return new \DateTimeImmutable((string) $value);
@@ -293,7 +296,7 @@ class DemandeImportController extends AbstractController
                     // ===== Demande terrain =====
                     $demande = new DemandeTerrain();
                     $demande
-                        ->setLocalite($localite)
+                        ->setLocalite($localite ?? null)
                         ->setSuperficie((float) $superficie)
                         ->setTypeDemande((string) $typeDemande)
                         ->setUsagePrevu((string) $usagePrevu)
