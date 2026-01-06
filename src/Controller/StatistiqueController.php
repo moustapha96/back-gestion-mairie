@@ -62,8 +62,6 @@ class StatistiqueController extends AbstractController
             "demande_terrains" => $pick(["gs_mairie_demandes"]),
             "quartiers"        => $pick(["gs_mairie_localites"]),
             "documents"        => $pick(["gs_mairie_documents"]),
-            "niveau_validations" => $pick(["gs_mairie_niveau_validations"]),
-            "historique_validations" => $pick(["gs_mairie_historique_validations"]),
             "categories_terrains" => $pick(["gs_mairie_categories_terrains"]),
             "titre_fonciers"   => $pick(["gs_mairie_titre_fonciers"]),
         ];

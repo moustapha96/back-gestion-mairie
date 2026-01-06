@@ -1,0 +1,50 @@
+{% set d = demande %}
+{% set nom = nomDisplay ?: '' %}
+{% set prenom = prenomDisplay ?: '' %}
+
+<h2>
+	{% if event == 'CREATED' %}
+		Votre demande #{{ d.id }}
+		a été enregistrée
+	{% else %}
+		Notification demande #{{ d.id }}
+	{% endif %}
+</h2>
+
+<p>Bonjour
+	{{ (prenom ~ ' ' ~ nom)|trim }},</p>
+
+{% if event == 'CREATED' %}
+	<p>Nous confirmons la création de votre demande. Elle sera examinée par nos services.</p>
+{% endif %}
+
+<ul>
+	<li>
+		<strong>Statut :</strong>
+		{{ statut }}</li>
+	<li>
+		<strong>Type de demande :</strong>
+		{{ typeDemande ?: '—' }}</li>
+	<li>
+		<strong>Type de titre :</strong>
+		{{ typeTitre ?: '—' }}</li>
+	<li>
+		<strong>Type de document :</strong>
+		{{ typeDocument ?: '—' }}</li>
+	<li>
+		<strong>Superficie :</strong>
+		{{ superficie ? superficie ~ ' m²' : '—' }}</li>
+	<li>
+		<strong>Quartier :</strong>
+		{{ localiteText ?: '—' }}</li>
+	<li>
+		<strong>Créée le :</strong>
+		{{ createdAt ? createdAt|date('d/m/Y H:i') : '—' }}</li>
+</ul>
+
+
+
+<p>Suivre votre dossier :
+	<a href="{{ detailUrl }}">{{ detailUrl }}</a>
+</p>
+<p style="color:#666;font-size:12px">Cet email est automatique.</p>

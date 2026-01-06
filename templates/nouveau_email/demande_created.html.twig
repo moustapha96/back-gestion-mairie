@@ -1,0 +1,102 @@
+{# templates/nouveau_email/demande_created.html.twig #}
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Votre demande a été créée
+{% endblock %}
+{% block header_title %}Confirmation de création de demande
+{% endblock %}
+
+{% block content %}
+	<p class="greeting">Bonjour
+		{{ user.prenom|default('') }}
+		{{ user.nom|default('') }},</p>
+
+	<div class="message">
+		<p>Nous confirmons la création de votre demande de terrain. Voici le récapitulatif :</p>
+
+		<div style="background-color:#EEEEE4;padding:20px;border:1px solid #76B5C5;border-radius:4px;margin:15px 0;">
+			<h3 style="color:#1E81B0;margin-top:0;">Informations de la demande</h3>
+			<ul style="margin-left:20px;margin-top:8px;list-style-type:none;padding:0;">
+				<li style="margin-bottom:8px;">
+					<strong>N° de demande :</strong>
+					{{ demande.id }}</li>
+				<li style="margin-bottom:8px;">
+					<strong>Type de demande :</strong>
+					{{ demande.typeDemande|default('—') }}</li>
+				<li style="margin-bottom:8px;">
+					<strong>Type de titre :</strong>
+					{{ demande.typeTitre|default('—') }}</li>
+				<li style="margin-bottom:8px;">
+					<strong>Superficie demandée :</strong>
+					{{ demande.superficie|default('—') }}
+					m²</li>
+				<li style="margin-bottom:8px;">
+					<strong>Usage prévu :</strong>
+					{{ demande.usagePrevu|default('—') }}</li>
+				<li style="margin-bottom:8px;">
+					<strong>Date de soumission :</strong>
+					{{ demande.dateCreation|date('d/m/Y H:i') }}</li>
+			</ul>
+
+			<h3 style="color:#1E81B0;margin-top:20px;">Localisation</h3>
+			<ul style="margin-left:20px;margin-top:8px;list-style-type:none;padding:0;">
+				<li style="margin-bottom:8px;">
+					<strong>Localité :</strong>
+					{{ localiteNom|default(localite.nom|default('—')) }}
+				</li>
+				<li style="margin-bottom:8px;">
+					<strong>Prix estimé (FCFA/m²) :</strong>
+					{% if localitePrix is not null %}
+						{{ localitePrix|number_format(0, ',', ' ') }}
+					{% elseif localite.prix is defined and localite.prix is not null %}
+						{{ localite.prix|number_format(0, ',', ' ') }}
+					{% else %}
+						—
+					{% endif %}
+				</li>
+			</ul>
+
+			{% if demande.recto or demande.verso %}
+				<h3 style="color:#1E81B0;margin-top:20px;">Documents fournis</h3>
+				<ul style="margin-left:20px;margin-top:8px;list-style-type:none;padding:0;">
+					<li style="margin-bottom:8px;">
+						<strong>Recto :</strong>
+						{% if demande.recto %}
+							<a href="{{ demande.recto }}" target="_blank" rel="noopener">Télécharger</a>
+						{% else %}
+							—
+						{% endif %}
+					</li>
+					<li style="margin-bottom:8px;">
+						<strong>Verso :</strong>
+						{% if demande.verso %}
+							<a href="{{ demande.verso }}" target="_blank" rel="noopener">Télécharger</a>
+						{% else %}
+							—
+						{% endif %}
+					</li>
+				</ul>
+			{% endif %}
+		</div>
+
+		<div class="message" style="margin-top:20px;">
+			<h3 style="color:#1E81B0;">Suivi de votre demande</h3>
+			<p>
+				Vous pouvez suivre l’état d’avancement de votre demande dans votre espace :
+				<a href="{{ detailUrl }}" style="color:#1E81B0;text-decoration:none;font-weight:bold;">
+					Ouvrir ma demande
+				</a>
+			</p>
+			<ol style="margin-left:20px;margin-top:8px;">
+				<li>Votre demande sera examinée par nos services.</li>
+				<li>Vous recevrez une notification à chaque étape (validation, approbations, etc.).</li>
+			</ol>
+		</div>
+
+		<p class="message" style="margin-top:20px;">
+			Merci pour votre confiance.<br>
+			Cordialement,<br>
+			L’équipe de gestion des demandes de terrain
+		</p>
+	</div>
+{% endblock %}

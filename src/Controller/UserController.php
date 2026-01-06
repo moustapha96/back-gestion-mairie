@@ -885,10 +885,7 @@ class UserController extends AbstractController
             return $arr;
         }
 
-        $historiques = [];
-        foreach ($d->getHistoriqueValidations() as $historique) {
-            $historiques[] = $historique->toArray();
-        }
+      
 
         return [
             'id' => $d->getId(),
@@ -910,8 +907,6 @@ class UserController extends AbstractController
             'rapport' => $d->getRapport(),
             'localite' => $d->getLocalite(), // <- déjà présent ici
             'recommandation' => $d->getRecommandation(),
-            'niveauValidationActuel' => $d->getNiveauValidationActuel() ? $d->getNiveauValidationActuel()->toArray() : null,
-            'historiqueValidations' => $historiques,
             'demandeur' => [
                 'prenom' => $d->getPrenom(),
                 'nom' => $d->getNom(),

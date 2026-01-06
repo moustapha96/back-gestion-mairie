@@ -13,7 +13,16 @@ parameters:
     key_path: '%kernel.project_dir%/config/key.txt'
     tfs_directory: '%kernel.project_dir%/public/tfs'
 
-    asset.base_url: '%env(string:ASSET_BASE_URL)%'
+    app.mail_sender: 'support@kaolackcommune.sn'
+    app.front_base_url: 'https://glotissement.kaolackcommune.sn'
+
+    asset.base_url: 'https://glotissement.kaolackcommune.sn'
+
+    app.upload.documents_dir: '%kernel.project_dir%/public/documents' 
+    app.upload.tfs_dir: '%kernel.project_dir%/public/tfs' # chemin disque
+    app.public.documents_prefix: '/documents'
+    
+    app.upload.contact_dir: '%kernel.project_dir%/public/uploads/contact'
 
 services:
     # default configuration for services in *this* file
@@ -82,5 +91,37 @@ services:
     App\Controller\UserController:
         arguments:
             $fileBaseUrl: '%asset.base_url%'
+        
+    App\Controller\AttributionParcelleController:
+        arguments:
+            $fileBaseUrl: '%asset.base_url%'
+
+    App\services\AttributionParcelleService:
+        autowire: true
+        autoconfigure: true
+
+    App\services\AttributionMailer:
+        arguments:
+            $fromEmail: '%app.mail_sender%'
+            $frontBaseUrl: '%app.front_base_url%'
+
+
+    App\services\MailService:
+        arguments:
+            $frontendBaseUrl: '%app.front_base_url%'
+            $senderEmail: '%app.mail_sender%'
+
+    App\services\NotificationAttributionGenerator:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Controller\ContactController:
+        arguments:
+            $fileBaseUrl: '%asset.base_url%'
+            $contactUploadDir: '%app.upload.contact_dir%'
+
+   
+
+
 
 

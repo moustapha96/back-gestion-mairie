@@ -1,0 +1,78 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Mise à jour de votre attribution{% endblock %}
+{% block header_title %}Mise à jour – Attribution de parcelle{% endblock %}
+
+{% block content %}
+	<p class="greeting">
+		Bonjour {{ prenomDisplay ?? 'Madame/Monsieur' }} {{ nomDisplay ?? '' }},
+	</p>
+
+	<div class="message">
+		<p>Votre dossier d’attribution (ID #{{ ap.id }}) a évolué :</p>
+
+		<div style="background:#EEEEE4;border:1px solid #76B5C5;border-radius:4px;padding:16px;margin:15px 0;">
+			<h3 style="color:#1E81B0;margin:0 0 8px 0;">Statut actuel</h3>
+			<p style="margin:0 0 8px 0;">
+				<strong>{{ statutValue }}</strong>
+				{% if event %}
+					<span style="color:#154C79;">(événement&nbsp;: {{ event }})</span>
+				{% endif %}
+			</p>
+
+			<h3 style="color:#1E81B0;margin:12px 0 8px;">Informations parcelle</h3>
+			<ul style="list-style:none;padding:0;margin:0 0 8px 0;">
+				<li><strong>Parcelle :</strong> {{ parcelle is defined and parcelle ? (parcelle.numero ?? '—') : '—' }}</li>
+				<li><strong>Surface :</strong> {{ parcelle is defined and parcelle and parcelle.surface is not null ? parcelle.surface : '—' }} m²</li>
+				<li><strong>Coordonnées :</strong> {{ parcelle is defined and parcelle and parcelle.latitude is not null ? parcelle.latitude : '—' }} / {{ parcelle is defined and parcelle and parcelle.longitude is not null ? parcelle.longitude : '—' }}</li>
+			</ul>
+
+			<h3 style="color:#1E81B0;margin:12px 0 8px;">Lotissement / Localité</h3>
+			<ul style="list-style:none;padding:0;margin:0 0 8px 0;">
+				<li><strong>Lotissement :</strong> {{ lotissement is defined and lotissement ? (lotissement.nom ?? '—') : '—' }}</li>
+				<li><strong>Quartier :</strong> {{ localite is defined and localite ? (localite.nom ?? '—') : '—' }}</li>
+				
+			</ul>
+
+			<h3 style="color:#1E81B0;margin:12px 0 8px;">Financier</h3>
+			<ul style="list-style:none;padding:0;margin:0;">
+				<li><strong>Montant :</strong>
+					{% if ap.montant is not null %}
+						{{ ap.montant|number_format(0, ',', ' ') }} FCFA
+					{% else %}—{% endif %}
+				</li>
+				<li><strong>Périodicité :</strong> {{ ap.frequence ?? '—' }}</li>
+				<li><strong>Date d’effet :</strong> {{ ap.dateEffet ? ap.dateEffet|date('d/m/Y') : '—' }}</li>
+				<li><strong>Date de fin :</strong> {{ ap.dateFin ? ap.dateFin|date('d/m/Y') : '—' }}</li>
+			</ul>
+		</div>
+
+		{% if event in ['VALIDATION_PROVISOIRE','ATTRIBUTION_PROVISOIRE','APPROBATION_PREFET','APPROBATION_CONSEIL'] %}
+			<div style="background:#f9fbff;border:1px solid #c9def5;border-radius:4px;padding:16px;margin:15px 0;">
+				<h3 style="color:#1E81B0;margin:0 0 8px 0;">Documents</h3>
+				{% if event == 'APPROBATION_CONSEIL' %}
+					<p><strong>Décision du Conseil :</strong> {{ decisionConseil ?? '—' }}</p>
+				{% endif %}
+				<p><strong>PV :</strong> {{ pv ?? ap.pvCommision ?? '—' }}</p>
+				{% if date %}<p><strong>Date :</strong> {{ date|date('d/m/Y') }}</p>{% endif %}
+			</div>
+		{% endif %}
+
+		{% if event == 'REOUVERTURE' %}
+			<div style="background:#fff8e6;border:1px solid #ffe0a6;border-radius:4px;padding:16px;margin:15px 0;">
+				<h3 style="color:#b26b00;margin:0 0 8px 0;">Réouverture</h3>
+				<p>Votre dossier a été réouvert pour reprendre le processus de validation.</p>
+			</div>
+		{% endif %}
+
+		<p>
+			Suivez l’évolution du dossier depuis votre espace :
+			<a href="{{ detailUrl }}" style="color:#1E81B0;text-decoration:none;font-weight:600;">ouvrir la page de suivi</a>.
+		</p>
+	</div>
+
+	<p class="message" style="margin-top: 20px;">
+		Cordialement,<br>
+		L’équipe de la Commune
+	</p>
+{% endblock %}

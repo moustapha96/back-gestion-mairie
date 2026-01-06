@@ -36,14 +36,16 @@ security:
             pattern: ^/api
             stateless: true
             provider: users
+            entry_point: jwt
             jwt: ~
+            refresh_jwt:
+                check_path: /api/token/refresh
 
     access_control:
         - { path: ^/$, roles: PUBLIC_ACCESS }
-        # - { path: ^/api, roles: PUBLIC_ACCESS }
         - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS } 
-        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         
         - { path: ^/api/user/inscription, roles: PUBLIC_ACCESS }
         - { path: ^/api/users/update-activated-status, roles: PUBLIC_ACCESS }
@@ -58,6 +60,7 @@ security:
         - { path: ^/api/demande/nouvelle-demande , roles: PUBLIC_ACCESS }
         - { path: ^/api/localite/liste-web , roles: PUBLIC_ACCESS }
         - { path: ^/api/articles , roles: PUBLIC_ACCESS }
+        - { path: ^/api/contact , roles: PUBLIC_ACCESS }
           
           
     role_hierarchy:

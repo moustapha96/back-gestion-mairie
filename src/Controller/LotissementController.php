@@ -90,16 +90,16 @@ class LotissementController extends AbstractController
             return $this->json(['error' => 'Localite not found'], Response::HTTP_NOT_FOUND);
         }
 
-        if (!isset($data['nom']) || !isset($data['localisation']) || !isset($data['description']) || !isset($data['statut'])) {
+        if (!isset($data['nom']) || !isset($data['statut'])) {
             return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
         }
 
         $lotissement = new Lotissement();
         $lotissement->setNom($data['nom']);
-        $lotissement->setLocalisation($data['localisation']);
-        $lotissement->setDescription($data['description']);
-        $lotissement->setLongitude($data['longitude']);
-        $lotissement->setLatitude($data['latitude']);
+        $lotissement->setLocalisation($data['localisation'] ?? null);
+        $lotissement->setDescription($data['description'] ?? "");
+        $lotissement->setLongitude($data['longitude'] ?? null);
+        $lotissement->setLatitude($data['latitude'] ?? null);
         $lotissement->setStatut($data['statut']);
         $lotissement->setDateCreation(new \DateTime());
         $lotissement->setLocalite($localite);
@@ -193,7 +193,7 @@ class LotissementController extends AbstractController
         if (!$lotissement) {
             return $this->json(['error' => 'Lotissement not found'], Response::HTTP_NOT_FOUND);
         }
-        if( $lotissement->getLots()->count() > 0) {
+        if ($lotissement->getLots()->count() > 0) {
             return $this->json('Ce Lotissement contient des ilots', Response::HTTP_CONFLICT);
         }
 

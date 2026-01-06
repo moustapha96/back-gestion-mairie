@@ -27,32 +27,32 @@ class Localite
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?string $nom = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?float $prix = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?string $description = null;
 
     #[ORM\Column(type: "float", nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?float $latitude = null;
 
     #[ORM\Column(type: "float", nullable: true)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demande:item', 'demande:list', 'demandeur:list','parcelle:item','parcelle:list'])]
     private ?float $longitude = null;
 
    
     #[ORM\OneToMany(mappedBy: 'localite', targetEntity: Lotissement::class)]
-    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demandeur:list'])]
+    #[Groups(['localite:list', 'localite:item', 'localite:write', 'demandeur:list','parcelle:item','parcelle:list'])]
     private Collection $lotissements;
 
     #[ORM\OneToMany(mappedBy: 'quartier', targetEntity: TitreFoncier::class)]

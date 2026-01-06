@@ -1,0 +1,114 @@
+{# templates/pdf/bulletin_liquidation.html.twig #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulletin de liquidation n° {{ BULLETIN_NUM|default('') }}</title>
+  <style>
+    @page { margin: 18mm 16mm 18mm 16mm; }
+    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12pt; color: #000; }
+    .small { font-size: 10pt; }
+    .xs { font-size: 9pt; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: 700; }
+    .mb4 { margin-bottom: 4mm; }
+    .mb2 { margin-bottom: 2mm; }
+    .mt2 { margin-top: 2mm; }
+    .mt4 { margin-top: 4mm; }
+    .hr { border: 0; border-top: 1px solid #000; margin: 3mm 0 3mm; }
+
+    /* En-tête 2 colonnes via tableau (robuste pour Dompdf) */
+    table.header { width: 100%; border-collapse: collapse; }
+    table.header td { vertical-align: top; }
+
+    /* Encadré principal */
+    .box { border: 1.2px solid #000; padding: 0; }
+    .title { font-weight: 800; font-size: 16pt; letter-spacing: .2px; }
+    .subtitle { font-size: 10.5pt; }
+
+    /* Tableau intérieur */
+    table.grid { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+    table.grid th, table.grid td {
+      border: 1.2px solid #000; padding: 6px 8px; vertical-align: top;
+    }
+    table.grid th { text-align: center; font-weight: 700; }
+
+    .dots { border-bottom: 1px dotted #000; display: inline-block; min-width: 160px; line-height: 1.2; }
+    .longdots { border-bottom: 1px dotted #000; display: inline-block; min-width: 260px; line-height: 1.2; }
+    .sumline { border-bottom: 1px solid #000; display: inline-block; min-width: 240px; }
+
+    .stampno { color: #d00; font-weight: 700; }
+    .footer { margin-top: 10mm; }
+  </style>
+</head>
+<body>
+
+  <!-- En-tête -->
+  <table class="header">
+    <tr>
+      <td style="width: 60%;">
+        <div class="small bold">REPUBLIQUE DU SENEGAL</div>
+        <div class="small bold">COMMUNE DE {{ COMMUNE_NOM|default('KAOLACK') }}</div>
+        <div class="small bold">DIVISION DES DOMAINES<br>ET DU PATRIMOINE FONCIER</div>
+      </td>
+      <td class="right" style="width: 40%;">
+        <div class="small">BULLETIN N° <span class="dots">{{ BULLETIN_NUM|default('') }}</span> ………………… <span class="xs">{{ CODE_SERVICE|default('CKSRAD') }}</span></div>
+        <div class="small mt2">N° <span class="stampno">{{ BULLETIN_REGISTRE|default('') }}</span></div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="center mt4">
+    <div class="title">BULLETIN DE LIQUIDATION</div>
+    <div class="subtitle mt2">Liquidation afférente à la délivrance de pièces relatives actes d’URBANISME et de l’HABITAT</div>
+  </div>
+
+  <!-- Encadré tableau -->
+  <div class="box mt4">
+    <table class="grid">
+      <thead>
+        <tr>
+          <th style="width: 68%;">DESIGNATION DES PIECES DELIVREES</th>
+          <th style="width: 32%;">MONTANT DE LA TAXE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="bold">TAXE SUR ACTE D'URBANISME</div>
+
+            <div class="mt2">NOM ET PRENOMS : <span class="longdots">{{ NOM_PRENOMS|default('') }}</span></div>
+            <div class="mt2">LOTISSEMENT&nbsp;&nbsp;: <span class="longdots">{{ LOTISSEMENT|default('') }}</span></div>
+            <div class="mt2">PARCELLE N°&nbsp;: <span class="dots">{{ PARCELLE_NUM|default('') }}</span></div>
+            <div class="mt2">MONTANT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="dots">{{ MONTANT|default('') }}</span></div>
+          </td>
+          <td class="center bold">
+            {{ MONTANT|default('') }} <span class="xs">FRS</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt4">
+    <div>ARRETE LE PRESENT BULLETIN A LA SOMME DE : <span class="sumline">{{ MONTANT_EN_LETTRES|default('') }}</span></div>
+  </div>
+
+  <div class="footer">
+    <table style="width:100%;">
+      <tr>
+        <td style="width: 60%;"></td>
+        <td style="width: 40%; text-align:right;">
+          {{ VILLE|default('Kaolack') }}, le <span class="dots">{{ DATE_DOCUMENT|default('') }}</span>
+        </td>
+      </tr>
+    </table>
+
+    <div style="margin-top: 16mm; text-align:right;">
+      <div class="bold">CHEF SERVICE DES RECETTES</div>
+    </div>
+  </div>
+
+</body>
+</html>

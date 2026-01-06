@@ -8,8 +8,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TitreFoncierRepository::class)]
-#[ApiResource]
-
 #[ORM\Table(name: '`gs_mairie_titre_fonciers`')]
 #[ApiResource(
     normalizationContext: [
@@ -22,13 +20,11 @@ use Doctrine\ORM\Mapping as ORM;
 )]
 class TitreFoncier
 {
-
-
-    const TYPE_TF = "Titre foncier";
-    const TYPE_BAIL = "Bail";
-    const TYPE_PLACE_PUBLIC = "Place publique";
-    const TYPE_DOMAINE_ETAT = "Domaine état";
-        
+    const TYPE_TF            = "Titre foncier";
+    const TYPE_BAIL          = "Bail";
+    const TYPE_PLACE_PUBLIC  = "Place publique";
+    const TYPE_DOMAINE_ETAT  = "Domaine état"; // attention: e + accent combiné
+    const TYPE_DOMAINE_ETAT_ALT = "Domaine état"; // variante (accent précomposé)
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -56,102 +52,48 @@ class TitreFoncier
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fichier = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getNumero(): ?string
-    {
-        return $this->numero;
-    }
+    public function getNumero(): ?string { return $this->numero; }
+    public function setNumero(?string $numero): static { $this->numero = $numero; return $this; }
 
-    public function setNumero(?string $numero): static
-    {
-        $this->numero = $numero;
+    public function getSuperficie(): ?float { return $this->superficie; }
+    public function setSuperficie(?float $superficie): static { $this->superficie = $superficie; return $this; }
 
-        return $this;
-    }
+    public function getTitreFigure(): ?array { return $this->titreFigure; }
+    public function setTitreFigure(?array $titreFigure): static { $this->titreFigure = $titreFigure; return $this; }
 
-    public function getSuperficie(): ?float
-    {
-        return $this->superficie;
-    }
+    public function getEtatDroitReel(): ?string { return $this->etatDroitReel; }
+    public function setEtatDroitReel(?string $etatDroitReel): static { $this->etatDroitReel = $etatDroitReel; return $this; }
 
-    public function setSuperficie(?float $superficie): static
-    {
-        $this->superficie = $superficie;
+    public function getQuartier(): ?Localite { return $this->quartier; }
+    public function setQuartier(?Localite $quartier): static { $this->quartier = $quartier; return $this; }
 
-        return $this;
-    }
-
-    public function getTitreFigure(): ?array
-    {
-        return $this->titreFigure;
-    }
-
-    public function setTitreFigure(?array $titreFigure): static
-    {
-        $this->titreFigure = $titreFigure;
-
-        return $this;
-    }
-
-    public function getEtatDroitReel(): ?string
-    {
-        return $this->etatDroitReel;
-    }
-
-    public function setEtatDroitReel(?string $etatDroitReel): static
-    {
-        $this->etatDroitReel = $etatDroitReel;
-
-        return $this;
-    }
-
-    public function getQuartier(): ?Localite
-    {
-        return $this->quartier;
-    }
-
-    public function setQuartier(?Localite $quartier): static
-    {
-        $this->quartier = $quartier;
-
-        return $this;
-    }
-
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
+    public function getType(): ?string { return $this->type; }
 
     public function setType(?string $type): static
     {
-         if (!in_array(
-            $type,
-            [
-                self::TYPE_BAIL,
-                self::TYPE_DOMAINE_ETAT,
-                self::TYPE_PLACE_PUBLIC,
-                self::TYPE_TF,
-            ]
-        )) {
+        if ($type === null) { $this->type = null; return $this; }
+
+        // Autoriser les deux variantes de “Domaine état”
+        $allowed = [
+            self::TYPE_BAIL,
+            self::TYPE_DOMAINE_ETAT,
+            self::TYPE_DOMAINE_ETAT_ALT,
+            self::TYPE_PLACE_PUBLIC,
+            self::TYPE_TF,
+        ];
+        if (!in_array($type, $allowed, true)) {
             throw new \InvalidArgumentException("Type de titre invalide: " . $type);
+        }
+        // Normaliser vers la valeur de référence
+        if ($type === self::TYPE_DOMAINE_ETAT_ALT) {
+            $type = self::TYPE_DOMAINE_ETAT;
         }
         $this->type = $type;
         return $this;
     }
 
-    public function getFichier(): ?string
-    {
-        return $this->fichier;
-    }
-
-    public function setFichier(?string $fichier): static
-    {
-        $this->fichier = $fichier;
-
-        return $this;
-    }
+    public function getFichier(): ?string { return $this->fichier; }
+    public function setFichier(?string $fichier): static { $this->fichier = $fichier; return $this; }
 }

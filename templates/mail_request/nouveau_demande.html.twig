@@ -1,0 +1,89 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Nouvelle Demande{% endblock %}
+
+{% block header_title %}Confirmation de votre demande{% endblock %}
+
+{% block content %}
+
+  {# ================= Variables pratiques ================= #}
+  {% set d = demande %}
+  {% set nom = nomDisplay ?: '' %}
+  {% set prenom = prenomDisplay ?: '' %}
+  {% set refDemande = d.numero is defined and d.numero ? d.numero : ('#' ~ (d.id ?? '—')) %}
+
+  {# ================= En-tête & salutations ================= #}
+  <p class="greeting">
+    Bonjour {{ (prenom ~ ' ' ~ nom)|trim ?: 'Madame/Monsieur' }},
+  </p>
+
+  <div class="message">
+    <h2 style="margin:0 0 8px 0; color:#1E81B0;">
+      {% if event == 'CREATED' %}
+        Votre demande {{ refDemande }} a été enregistrée
+      {% else %}
+        Notification — Demande {{ refDemande }}
+      {% endif %}
+    </h2>
+
+    {% if event == 'CREATED' %}
+      <p>Nous confirmons la création de votre demande. Elle sera examinée par nos services.</p>
+    {% endif %}
+
+    {# =================== Card principale (mêmes styles) =================== #}
+    <div style="background:#EEEEE4;border:1px solid #76B5C5;border-radius:4px;padding:16px;margin:15px 0;">
+      <h3 style="color:#1E81B0;margin:0 0 8px 0;">Résumé de la demande</h3>
+
+      <ul style="list-style:none;padding:0;margin:0;">
+        <li>
+          <strong>Référence :</strong>
+          {{ refDemande }}
+        </li>
+        <li>
+          <strong>Statut :</strong>
+          {{ statut ?? '—' }}
+        </li>
+        <li>
+          <strong>Type de demande :</strong>
+          {{ typeDemande ?: '—' }}
+        </li>
+        <li>
+          <strong>Type de titre :</strong>
+          {{ typeTitre ?: '—' }}
+        </li>
+        <li>
+          <strong>Type de document :</strong>
+          {{ typeDocument ?: '—' }}
+        </li>
+        <li>
+          <strong>Superficie :</strong>
+          {{ superficie is not null ? (superficie ~ ' m²') : '—' }}
+        </li>
+        <li>
+          <strong>Quartier / Localité :</strong>
+          {{ localiteText ?: '—' }}
+        </li>
+        <li>
+          <strong>Créée le :</strong>
+          {{ createdAt ? createdAt|date('d/m/Y H:i') : '—' }}
+        </li>
+      </ul>
+    </div>
+
+    {# ============== Card info pratique (même palette secondaire) ============== #}
+    <div style="background:#f9fbff;border:1px solid #c9def5;border-radius:4px;padding:16px;margin:15px 0;">
+      <h3 style="color:#1E81B0;margin:0 0 8px 0;">Suivi</h3>
+      <p style="margin:0 0 8px 0;">
+        Suivez l’évolution de votre dossier depuis votre espace :
+        <a href="{{ detailUrl }}" style="color:#1E81B0;text-decoration:none;font-weight:600;">ouvrir la page de suivi</a>.
+      </p>
+      <p style="margin:0;color:#666;font-size:12px;">Cet email est automatique.</p>
+    </div>
+  </div>
+
+  <p class="message" style="margin-top: 20px;">
+    Cordialement,<br>
+    L’équipe de la Commune
+  </p>
+
+{% endblock %}

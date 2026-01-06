@@ -2,16 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\AttributionParcelle;
 use App\Entity\Localite;
 use App\Entity\Request as Demande;
 use App\Entity\User;
 use App\Repository\LocaliteRepository;
 use App\Repository\RequestRepository;
 use App\Repository\UserRepository;
+use App\services\AttributionMailer;
 use App\services\FonctionsService;
 use App\services\MailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,16 +33,28 @@ class RequestController extends AbstractController
         LocaliteRepository $localiteRepository,
         FonctionsService $fonctionsService,
         private UserRepository $userRepository,
-        private MailService $mailService
+        private MailService $mailService,
+        private RequestRepository $repo,
+        private UserRepository $userRepo,
+        private AttributionMailer $attribMailer,
 
     ) {
         $this->localiteRepository = $localiteRepository;
         $this->fonctionsService = $fonctionsService;
+        $this->fileBaseUrl = rtrim($this->fileBaseUrl ?: ($_ENV['APP_FILE_BASE_URL'] ?? ''), '/');
     }
 
-
-
-
+    private function ok(mixed $data = null, int $status = 200): JsonResponse
+    {
+        return $this->json(['success' => $status >= 200 && $status < 300, 'data' => $data], $status);
+    }
+    private function error(string $message, int $status = 400, mixed $extra = null): JsonResponse
+    {
+        $p = ['success' => false, 'message' => $message];
+        if ($extra !== null)
+            $p['extra'] = $extra;
+        return $this->json($p, $status);
+    }
 
     #[Route('', name: 'demandes_list', methods: ['GET'])]
     public function list(HttpRequest $req): JsonResponse
@@ -182,6 +197,8 @@ class RequestController extends AbstractController
         $this->em->persist($demande);
         $this->em->flush();
 
+        $this->attribMailer->notifyDemandeCreation($demande);
+
         $userCreatedOrUpdated = null;
         try {
             $userCreatedOrUpdated = $this->createOrUpdateUserFromDemande($demande, $data);
@@ -293,8 +310,10 @@ class RequestController extends AbstractController
         // Nouveaux champs utilisateur
         if (isset($data['situationMatrimoniale']))
             $set('situationMatrimoniale', fn($v) => $d->setSituationMatrimoniale($v ?: null));
-        if (isset($data['profession']))
-            $set('profession', fn($v) => $d->setStatutLogement($v ?: null));
+
+        if (isset($data['statutLogement']))
+            $set('statutLogement', fn($v) => $d->setStatutLogement($v ?: null));
+
         if (isset($data['nombreEnfant']))
             $set('nombreEnfant', fn($v) => $d->setNombreEnfant($v !== null && $v !== '' ? (int) $v : null));
     }
@@ -309,11 +328,16 @@ class RequestController extends AbstractController
 
         if (isset($data['typeDemande']))
             $set('typeDemande', fn($v) => $v ? $d->setTypeDemande($v) : null);
+
         if (isset($data['typeDocument']))
-            $set('typeTitre', fn($v) => $d->setTypeDocument($v ?: null));
+            $set('typeDocument', fn($v) => $d->setTypeDocument($v ?: null));
+
         if (isset($data['typeTitre']))
-            $set('usagePrevu', fn($v) => $d->setTypeTitre($v ?: null));
-        $set('usagePrevu', fn($v) => $d->setUsagePrevu($v ?: null));
+            $set('typeTitre', fn($v) => $d->setTypeTitre($v ?: null));
+
+        if (isset($data['usagePrevu']))
+            $set('usagePrevu', fn($v) => $d->setUsagePrevu($v ?: null));
+
         if (isset($data['superficie']))
             $set('superficie', fn($v) => $d->setSuperficie($v !== null && $v !== '' ? (float) $v : null));
         if (isset($data['possedeAutreTerrain']))
@@ -336,7 +360,6 @@ class RequestController extends AbstractController
         if (isset($data['recommandation']))
             $set('recommandation', fn($v) => $d->setRecommandation($v ?: null));
 
-        // Les dates sont maintenues par l'entité (PrePersist/PreUpdate) si configuré
     }
 
     private function attachLocalite(Demande $d, $localiteId): void
@@ -352,20 +375,6 @@ class RequestController extends AbstractController
     private function attachLocaliteWithName(Demande $d, $localiteName): void
     {
         $d->setLocalite($localiteName);
-        // if (!$localiteName || $d->getLocalite() == null) {
-        //     $d->setQuartier(null);
-        // } else {
-        //     $localiteId = $this->localiteRepository->findOneBy(['nom' => $localiteName]);
-        //     $d->setQuartier($localiteId);
-
-        //     if (!$localiteId) {
-        //         $localite = new Localite();
-        //         $localite->setNom($localiteName);
-        //         $this->em->persist($localite);
-        //         $this->em->flush();
-        //         $d->setQuartier($localite);
-        //     }
-        // }
     }
 
     /**
@@ -509,14 +518,13 @@ class RequestController extends AbstractController
 
     private function serializeItem(Demande $d): array
     {
-
-
         $user = $d->getUtilisateur();
-        $dataUser = null;
-        if ($user) {
-            $dataUser = $user->toArray();
-        }
+        $dataUser = $user ? $user->toArray() : null;
 
+        // Prépare attribution (objet ou null)
+        $attributionArr = $this->serializeAttributionForDemande(
+            method_exists($d, 'getParcelleAttribuer') ? $d->getParcelleAttribuer() : null
+        );
 
         if (method_exists($d, 'toArray')) {
             $arr = $d->toArray();
@@ -525,8 +533,200 @@ class RequestController extends AbstractController
             foreach (['recto', 'verso'] as $k) {
                 if (!empty($arr[$k]) && !preg_match('#^https?://#i', (string) $arr[$k])) {
                     $v = (string) $arr[$k];
+                    if ($v !== '' && $v[0] !== '/')
+                        $v = '/' . ltrim($v, '/');
+                    if ($v !== '' && !str_starts_with($v, '/tfs/'))
+                        $v = '/tfs' . $v;
+                    $arr[$k] = rtrim($this->fileBaseUrl, '/') . $v;
+                }
+            }
+
+            // localite = STRING (champ texte)
+            $arr['localite'] = $d->getLocalite();
+
+            // quartier = OBJET (relation)
+            $quartier = $d->getQuartier();
+            $arr['quartier'] = $quartier ? [
+                'id' => $quartier->getId(),
+                'nom' => method_exists($quartier, 'getNom') ? $quartier->getNom() : null,
+                'prix' => method_exists($quartier, 'getPrix') ? $quartier->getPrix() : null,
+                'longitude' => method_exists($quartier, 'getLongitude') ? $quartier->getLongitude() : null,
+                'latitude' => method_exists($quartier, 'getLatitude') ? $quartier->getLatitude() : null,
+                'description' => method_exists($quartier, 'getDescription') ? $quartier->getDescription() : null,
+            ] : null;
+
+            // Demandeur si manquant
+            if (!isset($arr['demandeur'])) {
+                $arr['demandeur'] = [
+                    'prenom' => $d->getPrenom(),
+                    'nom' => $d->getNom(),
+                    'email' => $d->getEmail(),
+                    'telephone' => $d->getTelephone(),
+                    'adresse' => $d->getAdresse(),
+                    'profession' => $d->getProfession(),
+                    'numeroElecteur' => $d->getNumeroElecteur(),
+                    'dateNaissance' => $d->getDateNaissance()?->format('Y-m-d'),
+                    'lieuNaissance' => $d->getLieuNaissance(),
+                    'situationMatrimoniale' => $d->getSituationMatrimoniale(),
+                    'statutLogement' => $d->getStatutLogement(),
+                    'nombreEnfant' => $d->getNombreEnfant(),
+                    'isHabitant' => $this->fonctionsService->checkNumeroElecteurExist($d->getNumeroElecteur()),
+                ];
+            }
+
+            $arr['utilisateur'] = $dataUser;
+            // >>> I C I : on ajoute systématiquement l’attribution (ou null)
+            $arr['attribution'] = $attributionArr;
+
+            return $arr;
+        }
+
+        // Si pas de toArray() sur Demande : construction manuelle
+      
+        return [
+            'id' => $d->getId(),
+            'typeDemande' => $d->getTypeDemande(),
+            'typeDocument' => $d->getTypeDocument(),
+            'typeTitre' => $d->getTypeTitre(),
+            'superficie' => $d->getSuperficie(),
+            'usagePrevu' => $d->getUsagePrevu(),
+            'possedeAutreTerrain' => $d->isPossedeAutreTerrain(),
+            'statut' => $d->getStatut(),
+            'dateCreation' => $d->getDateCreation()?->format('Y-m-d H:i:s'),
+            'dateModification' => $d->getDateModification()?->format('Y-m-d H:i:s'),
+            'motif_refus' => $d->getMotifRefus(),
+            'recto' => $d->getRecto(),
+            'verso' => $d->getVerso(),
+            'terrainAKaolack' => $d->isTerrainAKaolack(),
+            'terrainAilleurs' => $d->isTerrainAilleurs(),
+            'decisionCommission' => $d->getDecisionCommission(),
+            'rapport' => $d->getRapport(),
+            'localite' => $d->getLocalite(),
+            'recommandation' => $d->getRecommandation(),
+            'demandeur' => [
+                'prenom' => $d->getPrenom(),
+                'nom' => $d->getNom(),
+                'email' => $d->getEmail(),
+                'telephone' => $d->getTelephone(),
+                'adresse' => $d->getAdresse(),
+                'profession' => $d->getProfession(),
+                'numeroElecteur' => $d->getNumeroElecteur(),
+                'dateNaissance' => $d->getDateNaissance()?->format('Y-m-d'),
+                'lieuNaissance' => $d->getLieuNaissance(),
+                'situationMatrimoniale' => $d->getSituationMatrimoniale(),
+                'statutLogement' => $d->getStatutLogement(),
+                'nombreEnfant' => $d->getNombreEnfant(),
+                'isHabitant' => $this->fonctionsService->checkNumeroElecteurExist($d->getNumeroElecteur()),
+            ],
+            'quartier' => $d->getQuartier() ? [
+                'id' => $d->getQuartier()->getId(),
+                'nom' => $d->getQuartier()->getNom(),
+                'prix' => $d->getQuartier()->getPrix(),
+                'longitude' => $d->getQuartier()->getLongitude(),
+                'latitude' => $d->getQuartier()->getLatitude(),
+                'description' => $d->getQuartier()->getDescription(),
+            ] : null,
+            'utilisateur' => $dataUser,
+            // >>> I C I : on ajoute systématiquement l’attribution (ou null)
+            'attribution' => $attributionArr,
+        ];
+    }
+
+    private function serializeItemProprietaire(User $p): array
+    {
+        return [
+            'id' => $p->getId(),
+            'nom' => $p->getNom(),
+            'prenom' => $p->getPrenom(),
+            'email' => $p->getEmail(),
+            'telephone' => $p->getTelephone(),
+            'adresse' => $p->getAdresse(),
+            'profession' => $p->getProfession(),
+            'numeroElecteur' => $p->getNumeroElecteur(),
+            'dateNaissance' => $p->getDateNaissance()?->format('Y-m-d'),
+        ];
+    }
+    private function serializeItemAttribution(AttributionParcelle $ap): array
+    {
+        $p = $ap->getParcelle();
+        $l = $p?->getLotissement();
+        $loc = $l?->getLocalite();
+        $nextAllowed = array_map(fn($s) => $s->value, $ap->nextAllowedStatuses());
+
+        return [
+            'id' => $ap->getId(),
+            'dateEffet' => $ap->getDateEffet()?->format(DATE_ATOM),
+            'dateFin' => $ap->getDateFin()?->format(DATE_ATOM),
+            'montant' => $ap->getMontant(),
+            'frequence' => $ap->getFrequence(),
+            'etatPaiement' => $ap->isEtatPaiement(),
+            'statut' => $ap->getStatutAttribution()->value,
+            'decisionConseil' => $ap->getDecisionConseil(),
+            'pvCommision' => $ap->getPvCommision(),
+            'pvValidationProvisoire' => $ap->getPvValidationProvisoire(),
+            'pvAttributionProvisoire' => $ap->getPvAttributionProvisoire(),
+            'pvApprobationPrefet' => $ap->getPvApprobationPrefet(),
+            'pvApprobationConseil' => $ap->getPvApprobationConseil(),
+            'nextAllowed' => $nextAllowed,
+            'canReopen' => $ap->canReopen(),
+            'datesEtapes' => [
+                'validationProvisoire' => $ap->getDateValidationProvisoire()?->format(DATE_ATOM),
+                'attributionProvisoire' => $ap->getDateAttributionProvisoire()?->format(DATE_ATOM),
+                'approbationPrefet' => $ap->getDateApprobationPrefet()?->format(DATE_ATOM),
+                'approbationConseil' => $ap->getDateApprobationConseil()?->format(DATE_ATOM),
+                'attributionDefinitive' => $ap->getDateAttributionDefinitive()?->format(DATE_ATOM),
+            ],
+            'demande' => $ap->getDemande() ? $this->serializeItemDemande($ap->getDemande()) : null,
+            'parcelle' => $p ? [
+                'id' => $p->getId(),
+                'numero' => $p->getNumero(),
+                'surface' => $p->getSurface(),
+                'statut' => $p->getStatut(),
+                'latitude' => $p->getLatitude(),
+                'longitude' => $p->getLongitude(),
+                'lotissement' => $l ? [
+                    'id' => $l->getId(),
+                    'nom' => $l->getNom(),
+                    'localisation' => $l->getLocalisation(),
+                    'description' => $l->getDescription(),
+                    'statut' => $l->getStatut(),
+                    'dateCreation' => $l->getDateCreation()?->format('Y-m-d'),
+                    'latitude' => $l->getLatitude(),
+                    'longitude' => $l->getLongitude(),
+                    'localite' => $loc ? [
+                        'id' => $loc->getId(),
+                        'nom' => $loc->getNom(),
+                        'prix' => $loc->getPrix(),
+                        'latitude' => $loc->getLatitude(),
+                        'longitude' => $loc->getLongitude(),
+                    ] : null,
+                ] : null,
+                'proprietaire' => $p->getProprietaire() ? $this->serializeItemProprietaire($p->getProprietaire()) : null,
+            ] : null,
+        ];
+    }
+    private function serializeItemDemande(Demande $d): array
+    {
+        $dataUser = null;
+        if (method_exists($d, 'getUtilisateur') ) {
+            $user = $this->userRepo->find($d->getUtilisateur()->getId());
+            if ($user) {
+                $dataUser = $user->toArray();
+            }
+        }
+        $parcelleAttribuer = null;
+        if (method_exists($d, 'getParcelleAttribuer')) {
+            $parcelleAttribuer = $d->getParcelleAttribuer() ? $this->serializeItemAttribution($d->getParcelleAttribuer()) : null;
+        }
+
+        if (method_exists($d, 'toArray')) {
+            $arr = $d->toArray();
+            // Normalisation des URLs fichiers
+            foreach (['recto', 'verso'] as $k) {
+                if (!empty($arr[$k]) && !preg_match('#^https?://#i', (string) $arr[$k])) {
+                    $v = (string) $arr[$k];
                     if ($v !== '' && $v[0] !== '/') {
-                        $v = '/' . ltrim($v, characters: '/');
+                        $v = '/' . ltrim($v, '/');
                     }
                     if ($v !== '' && !str_starts_with($v, '/tfs/')) {
                         $v = '/tfs' . $v;
@@ -568,13 +768,8 @@ class RequestController extends AbstractController
                 ];
             }
             $arr['utilisateur'] = $dataUser;
-
+            $arr['parcelleAttribuer'] = $parcelleAttribuer;
             return $arr;
-        }
-
-        $historiques = [];
-        foreach ($d->getHistoriqueValidations() as $historique) {
-            $historiques[] = $historique->toArray();
         }
 
 
@@ -596,10 +791,8 @@ class RequestController extends AbstractController
             'terrainAilleurs' => $d->isTerrainAilleurs(),
             'decisionCommission' => $d->getDecisionCommission(),
             'rapport' => $d->getRapport(),
-            'localite' => $d->getLocalite(),
+            'localite' => $d->getLocalite(), // <- déjà présent ici
             'recommandation' => $d->getRecommandation(),
-            'niveauValidationActuel' => $d->getNiveauValidationActuel() ? $d->getNiveauValidationActuel()->toArray() : null,
-            'historiqueValidations' => $historiques,
             'demandeur' => [
                 'prenom' => $d->getPrenom(),
                 'nom' => $d->getNom(),
@@ -623,7 +816,8 @@ class RequestController extends AbstractController
                 'latitude' => $d->getQuartier()->getLatitude(),
                 'description' => $d->getQuartier()->getDescription(),
             ] : null,
-            'utilisateur' => $user ? $dataUser : null,
+            'utilisateur' => $dataUser,
+            'parcelleAttribuer' => $parcelleAttribuer
         ];
     }
 
@@ -762,13 +956,23 @@ class RequestController extends AbstractController
         $dateMax = $req->query->get('dateMax'); // YYYY-MM-DD
 
         // QueryBuilder
+        // $qb = $this->em->getRepository(Demande::class)
+        //     ->createQueryBuilder('d')
+        //     ->leftJoin('d.quartier', 'l')->addSelect('l');
+
+        // QueryBuilder
         $qb = $this->em->getRepository(Demande::class)
             ->createQueryBuilder('d')
-            ->leftJoin('d.quartier', 'l')->addSelect('l');
+            ->leftJoin('d.quartier', 'l')->addSelect('l')
+            // Joindre l’attribution et la chaîne parcelle -> lotissement -> localité
+            ->leftJoin('d.parcelleAttribuer', 'ap')->addSelect('ap')
+            ->leftJoin('ap.parcelle', 'p')->addSelect('p')
+            ->leftJoin('p.lotissement', 'lot')->addSelect('lot')
+            ->leftJoin('lot.localite', 'loc')->addSelect('loc');
 
-        // Filtre OBLIGATOIRE: demandes du user
-        // ❌ AVANT: d.utilisateur_id
-        // ✅ MAINTENANT: d.utilisateur (propriété Doctrine)
+        $qb->andWhere('d.utilisateur = :user')->setParameter('user', $user);
+
+
         $qb->andWhere('d.utilisateur = :user')->setParameter('user', $user);
         // (Alternative : $qb->andWhere('IDENTITY(d.utilisateur) = :userId')->setParameter('userId', $user->getId());)
 
@@ -818,4 +1022,267 @@ class RequestController extends AbstractController
         ]);
     }
 
+
+
+
+    // methode pour attribuer une parcelle un demandeur
+    #[Route('/requests/{id}/attribuer-parcelle', name: 'demandes_assign', methods: ['POST'])]
+    public function assign(int $id, HttpRequest $req): JsonResponse
+    {
+        $demande = $this->em->getRepository(Demande::class)->find($id);
+        if ($demande === null) {
+            return $this->json(['success' => false, 'message' => 'Demande introuvable'], 404);
+        }
+        $data = json_decode($req->getContent(), true);
+        $montant = $data['montant'] ?? null;
+        $surface = $data['surface'] ?? null;
+        $date = new \DateTime();
+
+
+        $demande->setUtilisateur($this->getUser());
+        $this->em->flush();
+        return $this->json(['success' => true, 'message' => 'Demande attribuée']);
+    }
+
+    private function serializeAttributionForDemande(?\App\Entity\AttributionParcelle $ap): ?array
+    {
+        if (!$ap)
+            return null;
+
+        $p = $ap->getParcelle();
+        $lot = $p?->getLotissement();
+        $loc = $lot?->getLocalite();
+
+        return [
+            'id' => $ap->getId(),
+            'dateEffet' => $ap->getDateEffet()?->format(DATE_ATOM),
+            'dateFin' => $ap->getDateFin()?->format(DATE_ATOM),
+            'montant' => $ap->getMontant(),
+            'frequence' => $ap->getFrequence(),
+            'etatPaiement' => $ap->isEtatPaiement(),
+            'parcelle' => $p ? [
+                'id' => $p->getId(),
+                'numero' => $p->getNumero(),
+                'surface' => $p->getSurface(),
+                'statut' => $p->getStatut(),
+                'latitude' => $p->getLatitude(),
+                'longitude' => $p->getLongitude(),
+                'lotissement' => $lot ? [
+                    'id' => $lot->getId(),
+                    'nom' => $lot->getNom(),
+                    'localisation' => $lot->getLocalisation(),
+                    'description' => $lot->getDescription(),
+                    'statut' => $lot->getStatut(),
+                    'dateCreation' => $lot->getDateCreation()?->format('Y-m-d'),
+                    'latitude' => $lot->getLatitude(),
+                    'longitude' => $lot->getLongitude(),
+                    'localite' => $loc ? [
+                        'id' => $loc->getId(),
+                        'nom' => $loc->getNom(),
+                        'prix' => $loc->getPrix(),
+                        'latitude' => $loc->getLatitude(),
+                        'longitude' => $loc->getLongitude(),
+                    ] : null,
+                ] : null,
+            ] : null,
+        ];
+    }
+
+
+
+    #[Route('/{id}/documents', name: 'documents', methods: ['GET'])]
+    public function documents(int $id, RequestRepository $requestRepository): JsonResponse
+    {
+        $d = $requestRepository->find($id);
+        if (!$d)
+            return $this->json('Demande introuvable', 404);
+        $recto = method_exists($d, 'getRecto') ? $d->getRecto() : null;
+        $verso = method_exists($d, 'getVerso') ? $d->getVerso() : null;
+        return $this->ok([
+            'recto' => $recto,
+            'verso' => $verso
+        ]);
+    }
+    // nouveau-demandes/${id}/retirer-attribution
+    #[Route('/{id}/retirer-attribution', name: 'retirer_attribution', methods: ['PUT'])]
+    public function retirerAttribution($id, RequestRepository $requestRepository): JsonResponse
+    {
+        $demande = $requestRepository->find($id);
+        if (!$demande) {
+            return $this->json('Demande introuvable', 404);
+        }
+        $attribution = $demande->getParcelleAttribuer();
+        if (!$attribution) {
+            return $this->json('Attribution introuvable', 404);
+        }
+
+        $parcelle = $attribution->getParcelle();
+        $parcelle->setStatut('DISPONIBLE');
+        $parcelle->setProprietaire(null);
+        $attribution->setParcelle(null);
+        $demande->setParcelleAttribuer(null);
+
+        $this->em->persist($demande);
+        $this->em->persist($parcelle);
+        $this->em->persist($attribution);
+        $this->em->flush();
+
+        $resultat = $this->serializeItem($demande);
+        return $this->json(['success' => true, 'item' => $resultat, 'message' => 'Attribution retirée'], 200);
+
+    }
+
+
+    #[Route('/{id}/adjacent', name: '_get_adjacent_requests', methods: ['GET'])]
+    public function getAdjacentRequests(int $id): JsonResponse
+    {
+        $qb = $this->em->getRepository(Demande::class)
+            ->createQueryBuilder('d')
+            ->where('d.id < :id OR d.id > :id')
+            ->setParameter('id', $id)
+            ->orderBy('d.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $result = [];
+        foreach ($qb as $demande) {
+            $result[] = $demande->getId();
+        }
+        return $this->json(['success' => true, 'items' => $result], 200);
+    }
+
+
+    #[Route('/create-demande-demandeur', name: 'create_demande_demandeur', methods: ['POST'])]
+    public function createDemande(
+        HttpRequest $request,
+        UserRepository $userRepository,
+        LocaliteRepository $localiteRepository
+    ): Response {
+
+        $userId = $request->request->get('userId');
+        $superficie = $request->request->get('superficie') ?? null;
+        $usagePrevu = $request->request->get('usagePrevu') ?? null;
+        $localiteId = $request->request->get('localiteId');
+        $typeDemande = $request->request->get('typeDemande') ?? null;
+        $typeDocument = $request->request->get('typeDocument') ?? null;
+        $possedeAutreTerrain = $request->request->get('possedeAutreTerrain') ?? null;
+        $typeTitre = $request->request->get('typeTitre') ?? null;
+        $terrainAilleurs = $request->request->get('terrainAilleurs') ?? null;
+        $terrainAKaolack = $request->request->get('terrainAKaolack') ?? null;
+
+        if (!$typeDemande || !$userId || !$localiteId) {
+            return $this->json(['message' => 'Données manquantes ou invalides'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $utilisateur = $userRepository->find($userId);
+        $localite = $localiteRepository->find($localiteId);
+
+
+        if (!$utilisateur) {
+            return $this->json(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+        if (!$localite) {
+            return $this->json(['message' => 'Localité non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+
+        // Créer la demande de terrain
+        $demande = new Demande();
+        $demande
+            ->setSuperficie($superficie ?? 0)
+            ->setTypeDemande($typeDemande ?? null)
+            ->setUsagePrevu($usagePrevu ?? null)
+            ->setUtilisateur($utilisateur ?? null)
+            ->setTypeDocument($typeDocument ?? null)
+            ->setTypeTitre($typeTitre ?? null)
+            ->setTerrainAKaolack($terrainAKaolack ?? null)
+            ->setDateCreation(new \DateTime())
+            ->setStatut(Demande::STATUT_EN_ATTENTE)
+            ->setPossedeAutreTerrain($possedeAutreTerrain ?? null)
+            ->setMotifRefus(null)
+            ->setDecisionCommission(null)
+            ->setRapport(null)
+            ->setTerrainAilleurs($terrainAilleurs ?? null)
+            ->setRecommandation(null)
+            ->setRapport(null)
+            ->setLocalite($localite->getNom() ?? null)
+            ->setQuartier($localite);
+
+        /** @var UploadedFile|null $recto  */
+        /** @var UploadedFile|null $verso  */
+
+        $recto = $request->files->get('recto');
+        $verso = $request->files->get('verso');
+
+        $uploadDir = $this->getParameter('app.upload.documents_dir'); // = .../public/documents
+
+        if ($recto) {
+            $newFilename = sprintf(
+                '%s-%s-%s-%s.%s',
+                str_replace(' ', '-', strtolower($typeDocument)),
+                $typeDemande ? str_replace(' ', '-', strtolower($typeDemande)) : date('YmdHis'),
+                'recto',
+                $utilisateur ? str_replace(' ', '-', strtolower($utilisateur->getEmail())) : date('YmdHis'),
+                $recto->guessExtension()
+            );
+
+            // Déplace le fichier sur le disque
+            $recto->move($uploadDir, $newFilename);
+
+            // 1) On stocke en base un chemin WEB relatif (recommandé)
+            $webPath = $this->makePublicDocPath($newFilename);               // -> /documents/...
+            $demande->setRecto($webPath);
+
+            // 2) Si tu veux renvoyer une URL absolue dans la réponse :
+            $rectoUrl = $this->makeAbsoluteUrl($request, $webPath);          // -> http(s)://host/documents/...
+        }
+
+        if ($verso) {
+            $newFilename = sprintf(
+                '%s-%s-%s-%s.%s',
+                str_replace(' ', '-', strtolower($typeDocument)),
+                $typeDemande ? str_replace(' ', '-', strtolower($typeDemande)) : date('YmdHis'),
+                'verso',
+                $utilisateur ? str_replace(' ', '-', strtolower($utilisateur->getEmail())) : date('YmdHis'),
+                $verso->guessExtension()
+            );
+
+            $verso->move($uploadDir, $newFilename);
+
+            $webPath = $this->makePublicDocPath($newFilename);
+            $demande->setVerso($webPath);
+
+            $versoUrl = $this->makeAbsoluteUrl($request, $webPath);
+        }
+
+
+        $this->em->persist($demande);
+        $this->em->flush();
+
+
+        // $this->mailService->sendDemandeMail($demande);
+        $this->attribMailer->notifyDemandeCreation($demande);
+
+        return $this->json([
+            'message' => 'Demande créée avec succès',
+            'demande' => $demande->toArray(),
+            'quartier' => $demande->getQuartier()->toArray(),
+            'rectoUrl' => $rectoUrl,
+            'versoUrl' => $versoUrl
+        ], Response::HTTP_CREATED);
+    }
+
+
+    private function makePublicDocPath(string $filename): string
+    {
+        // on stocke un chemin web relatif => /documents/xxx.pdf
+        return rtrim($this->getParameter('app.public.documents_prefix'), '/')
+            . '/' . rawurlencode($filename);
+    }
+
+    private function makeAbsoluteUrl(HttpRequest $request, string $webPath): string
+    {
+        // pour renvoyer une URL absolue
+        return rtrim($request->getSchemeAndHttpHost(), '/') . $webPath;
+    }
 }

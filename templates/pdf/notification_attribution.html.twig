@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<title>Notification d’attribution
+			{{ TYPE_ATTRIBUTION|default('Provisoire') }}</title>
+		<style>
+			@page {
+				margin: 24mm 18mm;
+			}
+			body {
+				font-family: DejaVu Sans, Arial, sans-serif;
+				font-size: 12pt;
+				color: #000;
+			}
+
+			.header-grid {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			.header-grid td {
+				vertical-align: top;
+				width: 50%;
+			}
+			.cell {
+				text-align: center;
+			}
+			.left {
+				text-align: center;
+			}
+			.right {
+				text-align: center;
+			}
+
+			.logo {
+				height: 42px;
+			}
+			.rep-title {
+				font-weight: 700;
+				font-size: 13pt;
+				letter-spacing: 0.3px;
+				margin-top: 4mm;
+			}
+			.motto {
+				font-size: 10pt;
+				margin-top: 1mm;
+			}
+
+			.bloc-collectivite {
+				line-height: 1.3;
+				margin-top: 4mm;
+			}
+			.bloc-collectivite div {
+				margin: 1mm 0;
+				font-weight: 400;
+			}
+
+			.titre-maire {
+				text-align: center;
+				font-weight: 700;
+				font-size: 14pt;
+				margin: 10mm 0 4mm;
+			}
+			.sous-titre {
+				text-align: center;
+				margin: 0 0 7mm;
+			}
+
+			.dest {
+				text-align: right;
+				margin: 0 0 8mm;
+			}
+			.dest p {
+				margin: 0 0 3mm;
+			}
+
+			.objet {
+				font-weight: 700;
+				margin: 7mm 0 4mm;
+			}
+			.parag {
+				margin: 0 0 4mm;
+				text-align: justify;
+			}
+			.underline {
+				border-bottom: 1px solid #000;
+				padding: 0 2mm;
+			}
+
+			.fait-a {
+				text-align: right;
+				margin-top: 8mm;
+			}
+			.signature {
+				margin-top: 14mm;
+			}
+			.signature .label {
+				text-align: right;
+				margin-bottom: 14mm;
+			}
+			.signature .signer {
+				text-align: right;
+				white-space: pre-line;
+			}
+
+			.sep {
+				border: 0;
+				border-top: 1px solid #000;
+				margin: 6mm 0;
+			}
+			.page-wrap {
+				page-break-inside: avoid;
+			}
+		</style>
+	</head>
+	<body>
+		<div
+			class="page-wrap">
+
+			<!-- En-tête à deux colonnes -->
+			<table class="header-grid">
+				<tr>
+					<td class="cell left">
+						{% if logoSenegal %}
+							<img src="{{ logoSenegal }}" class="logo" alt="République du Sénégal">
+						{% endif %}
+						<div class="rep-title">REPUBLIQUE DU SENEGAL</div>
+						<div class="motto">Un Peuple – Un But – Une Foi</div>
+					</td>
+                    <td class="cell left">
+						{% if logoMairie %}
+							<img src="{{ logoMairie }}" class="logo" alt="Commune de Kaolack">
+						{% endif %}
+						<div class="bloc-collectivite">
+							<div>REGION DE KAOLACK</div>
+							<div>DEPARTEMENT DE KAOLACK</div>
+							<div>COMMUNE DE KAOLACK</div>
+						</div>
+					</td>
+				</tr>
+
+				<tr>
+					<td class="cell left">
+						
+					</td>
+				</tr>
+			</table>
+
+
+			<div class="titre-maire">LE MAIRE</div>
+			<div class="sous-titre">Le Maire de la Commune de Kaolack</div>
+
+			<!-- Destinataire (à droite) -->
+			<div class="dest">
+				<p>
+					<strong>A Monsieur (Mme) :</strong>
+					<span class="underline">{{ DEMANDEUR_NOM_COMPLET }}</span>
+				</p>
+				<p>
+					<strong>Domicilié(e) ou quartier/à :</strong>
+					<span class="underline">{{ DEMANDEUR_ADRESSE }}</span>
+				</p>
+				<p>
+					<strong>CIN N° :</strong>
+					<span class="underline">{{ DEMANDEUR_CNI }}</span>
+				</p>
+			</div>
+
+			<!-- Objet 
+				<span class="underline">{{ TYPE_ATTRIBUTION }}</span>-->
+			<div class="objet">
+				Objet : Notification d’attribution de parcelles.
+			</div>
+
+			<!-- Corps -->
+			<p class="parag">
+				La commission d’attribution de parcelles, réunie le
+				<span class="underline">{{ DATE_REUNION }}</span>, vous a désigné(e) comme attributaire
+										      du lot N°
+				<span class="underline">{{ LOT_NUMERO }}</span>
+				du lotissement de
+				<span class="underline">{{ LOTISSEMENT_NOM }}</span>
+				à Kaolack.
+			</p>
+
+			<p class="parag">
+				Il est entendu que l’acquisition de la parcelle est assujettie au paiement de la taxe de bornage auprès du
+								      receveur municipal. Il est porté à la connaissance de l’attributaire qu’un délai de
+				<span class="underline">{{ DELAI_PAIEMENT_JOURS }}</span>
+				jours lui est accordé pour s’acquitter de cette formalité.
+								      Faute de quoi, il sera procédé purement et simplement au retrait de la parcelle.
+			</p>
+
+			<!-- Fait à (à droite) -->
+			<p class="fait-a">
+				Fait à Kaolack, le
+				<span class="underline">{{ DATE_DOCUMENT }}</span>
+			</p>
+
+			<!-- Signature -->
+			<div class="signature">
+				<div class="label">
+					<strong>Le Maire</strong>
+				</div>
+				<div class="signer">
+					{{ MAIRE_NOM }}
+					{{ MAIRIE_NOM }}
+				</div>
+			</div>
+
+		</div>
+	</body>
+</html>

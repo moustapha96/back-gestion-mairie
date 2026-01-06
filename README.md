@@ -125,6 +125,34 @@ https://www.youtube.com/watch?v=cYoNDoa4_jE&t=2s#
 
 
 
+3) Règles métier retenues (résumé)
+
+DRAFT → ENREGISTREE (quand le dossier est complet).
+
+ENREGISTREE → VALIDATION_PROVISOIRE (pvCommision requis).
+
+VALIDATION_PROVISOIRE → ATTRIBUTION_PROVISOIRE (arrêté provisoire si applicable).
+
+ATTRIBUTION_PROVISOIRE → APPROBATION_PREFET (souvent obligatoire).
+
+APPROBATION_PREFET → APPROBATION_CONSEIL (selon procédure locale).
+
+APPROBATION_CONSEIL → ATTRIBUTION_DEFINITIVE (dateEffet + demande + parcelle requis).
+
+ATTRIBUTION_DEFINITIVE → MISE_EN_VALEUR (facultatif pour le suivi).
+
+À tout moment selon contexte : REJETEE, ANNULEE, SUSPENDUE.
+
+Adapte facilement le graphe de transitions dans nextAllowedStatuses() selon votre procédure locale (Kaolack/arrêtés spécifiques).
+
+
+
+
+
+
+
+
+
 composer clear-cache
 
 php bin/console cache:clear

@@ -21,6 +21,8 @@ class MailService extends AbstractController
         ConfigurationService $config,
         MailerInterface $mailer,
         UserRepository $userRepository,
+         private string $frontendBaseUrl,   // ex: https://glotissement.kaolackcommune.sn
+        private string $senderEmail   
 
     ) {
         $this->config = $config;
@@ -28,6 +30,9 @@ class MailService extends AbstractController
         $this->userRepository = $userRepository;
         $this->adminEmail = "support@kaolackcommune.sn";
     }
+
+
+
 
     private function sendEmail(string $to, string $subject, string $template, array $context = []): void
     {
@@ -123,24 +128,38 @@ class MailService extends AbstractController
     public function sendDemandeMail(Demande $demande): string
     {
         try {
-            $emailSend = (new TemplatedEmail())
+            $user = $demande->getUtilisateur();
+            if (!$user || !$user->getEmail()) {
+                return "Aucun destinataire e-mail pour cette demande.";
+            }
+
+            $detailUrl = rtrim($this->frontendBaseUrl, '/') . '/auth/sign-in';
+
+            $localiteEntity = $demande->getQuartier(); // objet Localite|Quartier
+            $localiteNom = $demande->getLocalite() ?: ($localiteEntity?->getNom() ?? null);
+            $localitePrix = $localiteEntity?->getPrix();
+
+            $email = (new TemplatedEmail())
                 ->from($this->getEmailSender())
-                ->to($demande->getUtilisateur()->getEmail())
-                ->subject("Confirmation de votre demande de terrain")
-                ->htmlTemplate('nouveau_email/compte-existant-demande-confirmation.html.twig')
+                ->to($user->getEmail())
+                ->subject(sprintf("Demande #%d créée - Accusé de réception", $demande->getId()))
+                ->htmlTemplate('nouveau_email/demande_created.html.twig')
                 ->context([
-                    'demande' => $demande,
-                    'nom' => $demande->getUtilisateur()->getNom(),
-                    'prenom' => $demande->getUtilisateur()->getPrenom(),
-                    'localite' => $demande->getLocalite(),
-                    'userEmail' => $demande->getUtilisateur()->getEmail(),
+                    'user'        => $user,
+                    'demande'     => $demande,
+                    'localite'    => $localiteEntity, // accessible par getters Twig
+                    'localiteNom' => $localiteNom,
+                    'localitePrix'=> $localitePrix,
+                    'detailUrl'   => $detailUrl,
                 ]);
-            $this->mailer->send($emailSend);
-            return "Email de confirmation envoyé avec succès pour le user existant!";
+
+            $this->mailer->send($email);
+            return "Email de confirmation de demande envoyé.";
         } catch (\Throwable $th) {
-            return "Erreur lors de l'envoi de l'email de confirmation ";
+            return $th->getMessage();
         }
     }
+
 
     public function sendStatusChangeMail(Demande $demande): string
     {

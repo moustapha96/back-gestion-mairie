@@ -1,0 +1,101 @@
+{% extends 'base/base-mail.html.twig' %}
+
+{% block title %}Demande enregistrée{% endblock %}
+{% block header_title %}Confirmation de votre demande{% endblock %}
+
+{% block content %}
+
+  {# ================= Variables ================= #}
+  {% set fullName = (prenomDisplay or nomDisplay)
+      ? ([(prenomDisplay|default('')), (nomDisplay|default(''))]|join(' ')|trim)
+      : 'Madame, Monsieur' %}
+  {% set refDemande = demande.numero is defined and demande.numero ? demande.numero : ('#' ~ (demande.id ?? '—')) %}
+
+  {# ================= Card principale (même style) ================= #}
+  <div style="background:#EEEEE4;border:1px solid #76B5C5;border-radius:4px;padding:16px;margin:15px 0;">
+    <p class="greeting" style="margin:0 0 12px 0;">
+      Bonjour {{ fullName }},
+    </p>
+
+    <p style="margin:0 0 12px 0;">
+      Votre demande <strong>{{ refDemande }}</strong> a bien été
+      <strong>enregistrée</strong> le
+      {{ dateCreation ? dateCreation|date('d/m/Y \\à H:i') : '—' }}.
+      Elle sera examinée par nos services dans les meilleurs délais.
+    </p>
+
+    <div style="border-top:1px solid #76B5C5;opacity:.6;margin:16px 0;"></div>
+
+    <h3 style="color:#1E81B0;margin:0 0 8px 0;">Détails de la demande</h3>
+    <ul style="list-style:none;padding:0;margin:0;">
+      <li><strong>Référence :</strong> {{ refDemande }}</li>
+      <li><strong>Type de demande :</strong> {{ typeDemande ?: '—' }}</li>
+      <li><strong>Type de titre :</strong> {{ typeTitre ?: '—' }}</li>
+      <li><strong>Type de document :</strong> {{ typeDocument ?: '—' }}</li>
+      <li><strong>Superficie :</strong> {{ superficie is not null ? superficie ~ ' m²' : '—' }}</li>
+      <li><strong>Usage prévu :</strong> {{ usagePrevu ?: '—' }}</li>
+      <li><strong>Quartier :</strong> {{ localite ?: '—' }}</li>
+      <li><strong>Statut :</strong> {{ statut ?: '—' }}</li>
+    </ul>
+
+    {# ========== Bloc accès compte (card secondaire bleue si nouveau user) ========== #}
+    {% if isNewUser %}
+      <div style="border-top:1px solid #76B5C5;opacity:.6;margin:16px 0;"></div>
+
+      <div style="background:#f9fbff;border:1px solid #c9def5;border-radius:4px;padding:16px;margin:10px 0;">
+        <h3 style="color:#1E81B0;margin:0 0 8px 0;">Votre accès à l’espace Demandeur</h3>
+        <p style="margin:0 0 10px 0;">
+          Un compte a été créé pour vous. Vous pourrez suivre l’évolution de vos demandes après connexion.
+        </p>
+
+        {% if activationUrl %}
+          <p style="margin:0 0 12px 0;">
+            <a href="{{ activationUrl }}"
+               style="display:inline-block;background:#1E81B0;color:#fff;text-decoration:none;
+                      padding:10px 16px;border-radius:4px;border:1px solid #154C79;font-weight:600;">
+              Activer mon compte
+            </a>
+          </p>
+        {% endif %}
+
+        <p style="margin:0 0 6px 0;color:#4b5563;">Identifiants de connexion :</p>
+        <ul style="list-style:none;padding:0;margin:0 0 10px 0;color:#4b5563;">
+          <li>
+            <strong>Email :</strong>
+            <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">
+              {{ emailDisplay }}
+            </span>
+          </li>
+          {% if rawPassword %}
+            <li>
+              <strong>Mot de passe temporaire :</strong>
+              <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">
+                {{ rawPassword }}
+              </span>
+            </li>
+            <li>Par sécurité, pensez à le modifier après votre première connexion.</li>
+          {% endif %}
+        </ul>
+
+        <p style="margin:0;">
+          <a href="{{ loginUrl }}"
+             style="display:inline-block;background:#1E81B0;color:#fff;text-decoration:none;
+                    padding:10px 16px;border-radius:4px;border:1px solid #154C79;font-weight:600;">
+            Se connecter
+          </a>
+        </p>
+      </div>
+    {% else %}
+      <div style="border-top:1px solid #76B5C5;opacity:.6;margin:16px 0;"></div>
+      <p style="margin:0;">
+        Vous pouvez consulter le statut de votre demande depuis votre espace usager.
+      </p>
+    {% endif %}
+
+    <div style="border-top:1px solid #76B5C5;opacity:.6;margin:16px 0;"></div>
+    <p style="margin:0;color:#666;font-size:12px;">
+      Ceci est un message automatique. Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.
+    </p>
+  </div>
+
+{% endblock %}

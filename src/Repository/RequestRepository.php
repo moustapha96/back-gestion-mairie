@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Request;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -40,4 +41,24 @@ class RequestRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findByUtilisateur(User $user, int $offset = 0, int $limit = 50): array
+    {
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.utilisateur = :u')
+            ->setParameter('u', $user)
+            ->orderBy('d.id', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()->getResult();
+    }
+
+     public function countByUtilisateur(User $user): int
+    {
+        return (int)$this->createQueryBuilder('d')
+            ->select('COUNT(d.id)')
+            ->andWhere('d.utilisateur = :u')
+            ->setParameter('u', $user)
+            ->getQuery()->getSingleScalarResult();
+    }
 }

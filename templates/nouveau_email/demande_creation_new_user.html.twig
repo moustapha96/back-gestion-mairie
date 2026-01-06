@@ -1,0 +1,70 @@
+{% set fullName = (prenomDisplay or nomDisplay) 
+    ? ([(prenomDisplay|default('')), (nomDisplay|default(''))]|join(' ')|trim) 
+    : 'Madame, Monsieur' 
+%}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Demande enregistrée</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111; }
+    .card { max-width: 640px; margin: 0 auto; border:1px solid #e5e7eb; border-radius:12px; padding:24px; }
+    .muted { color:#6b7280; }
+    .btn { display:inline-block; padding:10px 16px; border-radius:8px; text-decoration:none; background:#0ea5e9; color:#fff; }
+    .line { border-top:1px solid #e5e7eb; margin:16px 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p>Bonjour {{ fullName }},</p>
+
+    <p>Votre demande <strong>#{{ demande.id }}</strong> a bien été <strong>enregistrée</strong> le
+      {{ dateCreation ? dateCreation|date('d/m/Y à H:i') : '—' }}.
+      Elle sera examinée par nos services dans les meilleurs délais.
+    </p>
+
+    <div class="line"></div>
+
+    <h3>Détails de la demande</h3>
+    <ul class="muted">
+      <li><strong>Type de demande :</strong> {{ typeDemande ?: '—' }}</li>
+      <li><strong>Type de titre :</strong> {{ typeTitre ?: '—' }}</li>
+      <li><strong>Type de document :</strong> {{ typeDocument ?: '—' }}</li>
+      <li><strong>Superficie :</strong> {{ superficie ?: '—' }} m²</li>
+      <li><strong>Usage prévu :</strong> {{ usagePrevu ?: '—' }}</li>
+      <li><strong>Quartier :</strong> {{ localite ?: '—' }}</li>
+      <li><strong>Statut :</strong> {{ statut ?: '—' }}</li>
+    </ul>
+
+    {% if isNewUser %}
+      <div class="line"></div>
+      <h3>Votre accès à l’espace Demandeur</h3>
+      <p>Un compte a été créé pour vous. Vous pouvez suivre l’évolution de vos demandes après connexion.</p>
+
+      {% if activationUrl %}
+        <p><a href="{{ activationUrl }}" class="btn">Activer mon compte</a></p>
+      {% endif %}
+
+      <p class="muted">Identifiants de connexion :</p>
+      <ul class="muted">
+        <li><strong>Email :</strong> <span class="mono">{{ emailDisplay }}</span></li>
+        {% if rawPassword %}
+          <li><strong>Mot de passe temporaire :</strong> <span class="mono">{{ rawPassword }}</span></li>
+          <li>Par sécurité, pensez à le modifier après votre première connexion.</li>
+        {% endif %}
+      </ul>
+
+      <p><a href="{{ loginUrl }}" class="btn">Se connecter</a></p>
+    {% else %}
+      <div class="line"></div>
+      <p>Vous pouvez consulter le statut de votre demande depuis votre espace </p>
+    {% endif %}
+
+    <div class="line"></div>
+    <p class="muted">Ceci est un message automatique. Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</p>
+  </div>
+</body>
+</html>

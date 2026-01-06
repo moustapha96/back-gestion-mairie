@@ -222,33 +222,41 @@ class Request
     private ?Localite $quartier = null;
 
 
-    // Ajoutez ces propriétés dans la classe
-    #[ORM\ManyToOne(targetEntity: NiveauValidation::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['demande:list', 'demande:item', 'demande:write'])]
-    private ?NiveauValidation $niveauValidationActuel = null;
 
-    #[ORM\OneToMany(mappedBy: 'request', targetEntity: HistoriqueValidation::class)]
-    #[Groups(['demande:item'])]
-    private Collection $historiqueValidations;
 
     #[ORM\ManyToOne(inversedBy: 'demande_demandeurs', fetch: 'LAZY')]
     #[Groups(['demande:list', 'demande:item', 'demande:write', 'localite:item', 'localite:list'])]
     #[MaxDepth(1)]
     private ?User $utilisateur = null;
 
+    #[ORM\OneToOne(mappedBy: 'demande', cascade: ['persist', 'remove'])]
+    private ?AttributionParcelle $parcelleAttribuer = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $numero = null;
+
 
     public function __construct(?FonctionsService $fonctionsService = null)
     {
-        $this->historiqueValidations = new ArrayCollection();
+
         $this->fonctionsService = $fonctionsService;
         if ($fonctionsService !== null && $this->getNumeroElecteur() !== null) {
             $this->updateHabitantStatus();
         }
         $this->dateCreation = new \DateTime();
         $this->statut = self::STATUT_EN_ATTENTE;
+        $this->numero = $this->generateCode();
+    }
 
-
+    public function generateCode(): string
+    {
+        $date = new \DateTime();
+        $year = $date->format('Y');
+        $month = $date->format('m');
+        $day = $date->format('d');
+        $hours = $date->format('H');
+        $minutes = $date->format('i');
+        return 'DP' . $year . $month . $day . $hours . $minutes;
     }
 
     public function getEmail(): ?string
@@ -396,15 +404,32 @@ class Request
     }
 
 
+    public function getInformationDemandeur(): array
+    {
+        return [
+            'nom' => $this->getNom(),
+            'prenom' => $this->getPrenom(),
+            'email' => $this->getEmail(),
+            'telephone' => $this->getTelephone(),
+            'dateNaissance' => $this->getDateNaissance()?->format('Y-m-d'),
+            'lieuNaissance' => $this->getLieuNaissance(),
+            'adresse' => $this->getAdresse(),
+            'numeroElecteur' => $this->getNumeroElecteur() ?? null,
+            'profession' => $this->getProfession(),
+            'isHabitant' => $this->isHabitant() ? true : false,
+            'nombreEnfant' => $this->getNombreEnfant(),
+            'situationMatrimoniale' => $this->getSituationMatrimoniale(),
+            
+        ];
+    }
+
     public function toArray(): array
     {
-        $historiques = [];
-        foreach ($this->getHistoriqueValidations() as $historique) {
-            $historiques[] = $historique->toArray();
-        }
+
 
         return [
             'id' => $this->getId(),
+            'numero' => $this->getNumero(),
             'typeDemande' => $this->getTypeDemande(),
             'typeDocument' => $this->getTypeDocument(),
             'superficie' => $this->getSuperficie(),
@@ -426,8 +451,6 @@ class Request
             // <<< AJOUT ICI
             'localite' => $this->getLocalite(),
 
-            'historiqueValidations' => $historiques,
-            'niveauValidationActuel' => $this->getNiveauValidationActuel() ? $this->getNiveauValidationActuel()->toArray() : null,
 
             'nom' => $this->getNom(),
             'prenom' => $this->getPrenom(),
@@ -562,7 +585,7 @@ class Request
                 ]
             )
         ) {
-            throw new \InvalidArgumentException("Titre document invalide: " . $typeTitre);
+            throw new \InvalidArgumentException("Type de titre invalide: " . $typeTitre);
         }
 
         $this->typeTitre = $typeTitre;
@@ -859,40 +882,6 @@ class Request
     }
 
 
-    public function getNiveauValidationActuel(): ?NiveauValidation
-    {
-        return $this->niveauValidationActuel;
-    }
-
-    public function setNiveauValidationActuel(?NiveauValidation $niveauValidationActuel): static
-    {
-        $this->niveauValidationActuel = $niveauValidationActuel;
-        return $this;
-    }
-
-    public function getHistoriqueValidations(): Collection
-    {
-        return $this->historiqueValidations;
-    }
-
-    public function addHistoriqueValidation(HistoriqueValidation $historiqueValidation): static
-    {
-        if (!$this->historiqueValidations->contains($historiqueValidation)) {
-            $this->historiqueValidations->add($historiqueValidation);
-            $historiqueValidation->setRequest($this);
-        }
-        return $this;
-    }
-    public function removeHistoriqueValidation(HistoriqueValidation $historiqueValidation): static
-    {
-        if ($this->historiqueValidations->removeElement($historiqueValidation)) {
-            // set the owning side to null (unless already changed)
-            if ($historiqueValidation->getRequest() === $this) {
-                $historiqueValidation->setRequest(null);
-            }
-        }
-        return $this;
-    }
 
     public function getUtilisateur(): ?User
     {
@@ -905,4 +894,39 @@ class Request
 
         return $this;
     }
+
+    public function getParcelleAttribuer(): ?AttributionParcelle
+    {
+        return $this->parcelleAttribuer;
+    }
+
+    public function setParcelleAttribuer(?AttributionParcelle $parcelleAttribuer): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($parcelleAttribuer === null && $this->parcelleAttribuer !== null) {
+            $this->parcelleAttribuer->setDemande(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($parcelleAttribuer !== null && $parcelleAttribuer->getDemande() !== $this) {
+            $parcelleAttribuer->setDemande($this);
+        }
+
+        $this->parcelleAttribuer = $parcelleAttribuer;
+
+        return $this;
+    }
+
+    public function getNumero(): ?string
+    {
+        return $this->numero;
+    }
+
+    public function setNumero(?string $numero): static
+    {
+        $this->numero = $numero;
+
+        return $this;
+    }
+
 }
