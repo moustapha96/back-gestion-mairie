@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\EventSubscriber;
 
+use App\Entity\RefreshToken;
 use Doctrine\ORM\EntityManagerInterface;
 use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
@@ -26,24 +29,41 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
         $data = $event->getData();   // contient déjà "token"
         $user = $event->getUser();
 
-        if (!is_object($user)) {
+        if (!\is_object($user)) {
             return;
         }
 
-        // TTL du refresh token (ex: 30 jours)
-        $ttl = new \DateTime();
-        $ttl->modify('+30 days');
+        try {
+            $username = $user->getUserIdentifier();
 
-        // Créer un refresh token
-        $refreshToken = $this->refreshTokenManager->create();
-        $refreshToken->setUsername($user->getUserIdentifier());
-        $refreshToken->setRefreshToken(); // génère un token unique
-        $refreshToken->setValid($ttl);
+            // Supprimer les anciens tokens de cet utilisateur pour éviter l'accumulation
+            // Utilisation d'une requête DQL pour une suppression directe plus efficace
+            $this->em->createQueryBuilder()
+                ->delete(RefreshToken::class, 'rt')
+                ->where('rt.username = :username')
+                ->setParameter('username', $username)
+                ->getQuery()
+                ->execute();
 
-        $this->refreshTokenManager->save($refreshToken);
+            // TTL du refresh token (30 jours)
+            $ttl = new \DateTime();
+            $ttl->modify('+30 days');
 
-        // Ajouter au payload de réponse
-        $data['refresh_token'] = $refreshToken->getRefreshToken();
-        $event->setData($data);
+            // Créer un nouveau refresh token
+            $refreshToken = $this->refreshTokenManager->create();
+            $refreshToken->setUsername($username);
+            $refreshToken->setRefreshToken(); // génère un token unique
+            $refreshToken->setValid($ttl);
+
+            $this->refreshTokenManager->save($refreshToken);
+
+            // Ajouter au payload de réponse
+            $data['refresh_token'] = $refreshToken->getRefreshToken();
+            $event->setData($data);
+        } catch (\Throwable $e) {
+            // En cas d'erreur, on continue sans bloquer l'authentification
+            // Le token JWT principal est déjà dans la réponse
+            // On peut logger l'erreur si nécessaire
+        }
     }
 }
