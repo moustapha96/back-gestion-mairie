@@ -55,6 +55,11 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
             $refreshToken->setRefreshToken(); // génère un token unique
             $refreshToken->setValid($ttl);
 
+            // Définir explicitement created_at si la méthode existe
+            if ($refreshToken instanceof RefreshToken && \method_exists($refreshToken, 'setCreatedAt')) {
+                $refreshToken->setCreatedAt(new \DateTime());
+            }
+
             $this->refreshTokenManager->save($refreshToken);
 
             // Ajouter au payload de réponse
