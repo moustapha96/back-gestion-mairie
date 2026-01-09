@@ -18,7 +18,6 @@ class RefreshToken extends BaseRefreshToken
 
     public function __construct()
     {
-        parent::__construct();
         // Initialiser created_at dès la construction pour éviter l'erreur SQL
         $this->createdAt = new \DateTime();
     }
