@@ -49,18 +49,18 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
             $ttl = new \DateTime();
             $ttl->modify('+30 days');
 
-            // Créer un nouveau refresh token
-            $refreshToken = $this->refreshTokenManager->create();
+            // Créer un nouveau refresh token en utilisant directement notre classe
+            $refreshToken = new RefreshToken();
             $refreshToken->setUsername($username);
             $refreshToken->setRefreshToken(); // génère un token unique
             $refreshToken->setValid($ttl);
+            
+            // S'assurer que created_at est toujours défini (déjà fait dans le constructeur, mais on le force)
+            $refreshToken->setCreatedAt(new \DateTime());
 
-            // Définir explicitement created_at si la méthode existe
-            if ($refreshToken instanceof RefreshToken && \method_exists($refreshToken, 'setCreatedAt')) {
-                $refreshToken->setCreatedAt(new \DateTime());
-            }
-
-            $this->refreshTokenManager->save($refreshToken);
+            // Utiliser l'EntityManager directement pour garantir que les callbacks s'exécutent
+            $this->em->persist($refreshToken);
+            $this->em->flush();
 
             // Ajouter au payload de réponse
             $data['refresh_token'] = $refreshToken->getRefreshToken();
