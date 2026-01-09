@@ -38,14 +38,12 @@ security:
             provider: users
             entry_point: jwt
             jwt: ~
-            # TODO: Refresh token désactivé temporairement pour éviter les erreurs
-            # refresh_jwt:
-            #     check_path: /api/token/refresh
+            refresh_jwt:
+                check_path: /api/token/refresh
 
     access_control:
         - { path: ^/$, roles: PUBLIC_ACCESS }
-        # TODO: Refresh token désactivé temporairement pour éviter les erreurs
-        # - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS } 
+        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS } 
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         
