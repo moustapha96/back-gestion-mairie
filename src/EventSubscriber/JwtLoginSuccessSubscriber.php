@@ -33,42 +33,43 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
             return;
         }
 
-        try {
-            $username = $user->getUserIdentifier();
-
-            // Supprimer les anciens tokens de cet utilisateur pour éviter l'accumulation
-            // Utilisation d'une requête DQL pour une suppression directe plus efficace
-            $this->em->createQueryBuilder()
-                ->delete(RefreshToken::class, 'rt')
-                ->where('rt.username = :username')
-                ->setParameter('username', $username)
-                ->getQuery()
-                ->execute();
-
-            // TTL du refresh token (30 jours)
-            $ttl = new \DateTime();
-            $ttl->modify('+30 days');
-
-            // Créer un nouveau refresh token en utilisant directement notre classe
-            $refreshToken = new RefreshToken();
-            $refreshToken->setUsername($username);
-            $refreshToken->setRefreshToken(); // génère un token unique
-            $refreshToken->setValid($ttl);
-            
-            // S'assurer que created_at est toujours défini (déjà fait dans le constructeur, mais on le force)
-            $refreshToken->setCreatedAt(new \DateTime());
-
-            // Utiliser l'EntityManager directement pour garantir que les callbacks s'exécutent
-            $this->em->persist($refreshToken);
-            $this->em->flush();
-
-            // Ajouter au payload de réponse
-            $data['refresh_token'] = $refreshToken->getRefreshToken();
-            $event->setData($data);
-        } catch (\Throwable $e) {
-            // En cas d'erreur, on continue sans bloquer l'authentification
-            // Le token JWT principal est déjà dans la réponse
-            // On peut logger l'erreur si nécessaire
-        }
+        // TODO: Refresh token désactivé temporairement pour éviter les erreurs
+        // try {
+        //     $username = $user->getUserIdentifier();
+        //
+        //     // Supprimer les anciens tokens de cet utilisateur pour éviter l'accumulation
+        //     // Utilisation d'une requête DQL pour une suppression directe plus efficace
+        //     $this->em->createQueryBuilder()
+        //         ->delete(RefreshToken::class, 'rt')
+        //         ->where('rt.username = :username')
+        //         ->setParameter('username', $username)
+        //         ->getQuery()
+        //         ->execute();
+        //
+        //     // TTL du refresh token (30 jours)
+        //     $ttl = new \DateTime();
+        //     $ttl->modify('+30 days');
+        //
+        //     // Créer un nouveau refresh token en utilisant directement notre classe
+        //     $refreshToken = new RefreshToken();
+        //     $refreshToken->setUsername($username);
+        //     $refreshToken->setRefreshToken(); // génère un token unique
+        //     $refreshToken->setValid($ttl);
+        //     
+        //     // S'assurer que created_at est toujours défini (déjà fait dans le constructeur, mais on le force)
+        //     $refreshToken->setCreatedAt(new \DateTime());
+        //
+        //     // Utiliser l'EntityManager directement pour garantir que les callbacks s'exécutent
+        //     $this->em->persist($refreshToken);
+        //     $this->em->flush();
+        //
+        //     // Ajouter au payload de réponse
+        //     $data['refresh_token'] = $refreshToken->getRefreshToken();
+        //     $event->setData($data);
+        // } catch (\Throwable $e) {
+        //     // En cas d'erreur, on continue sans bloquer l'authentification
+        //     // Le token JWT principal est déjà dans la réponse
+        //     // On peut logger l'erreur si nécessaire
+        // }
     }
 }
