@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-platform-php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - ./php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+    environment:
+      - APP_ENV=${APP_ENV:-prod}
+      - APP_DEBUG=${APP_DEBUG:-0}
+      - DATABASE_URL=${DATABASE_URL}
+      - ELECTEURS_DATABASE_URL=${ELECTEURS_DATABASE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - JWT_PASSPHRASE=${JWT_PASSPHRASE}
+      - PHP_OPCACHE_ENABLE=1
+      - PHP_OPCACHE_MEMORY_SIZE=256
+      - PHP_OPCACHE_MAX_ACCELERATED_FILES=20000
+      - PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD", "php-fpm-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optionnel : Base de données MySQL (si nécessaire)
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: api-platform-mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - api-network
+  #   ports:
+  #     - "3306:3306"
+
+networks:
+  api-network:
+    driver: bridge
+
+# volumes:
+#   mysql_data:
