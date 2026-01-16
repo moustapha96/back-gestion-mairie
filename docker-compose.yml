@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: gestion-demande-php
+    ports:
+      - "127.0.0.1:9000:9000"
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
