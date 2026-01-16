@@ -5,40 +5,39 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: api-platform-php
+    container_name: gestion-demande-php
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - /var/www/gestion-demande:/var/www/html
-    ports:
-      - "9000:9000"   # 🔥 OBLIGATOIRE
+      - .:/var/www/html
     environment:
       APP_ENV: prod
       APP_DEBUG: 0
+    depends_on:
+      - mysql
     networks:
-      - api-network
+      - backend-network
 
-
-  # Optionnel : Base de données MySQL (si nécessaire)
-  # mysql:
-  #   image: mysql:8.0
-  #   container_name: api-platform-mysql
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-  #   networks:
-  #     - api-network
-  #   ports:
-  #     - "3306:3306"
+  mysql:
+    image: mysql:8.0
+    container_name: gestion-demande-mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: demande_terrain
+      MYSQL_USER: gl_user
+      MYSQL_PASSWORD: Kaolack@2025
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"   # facultatif (debug)
+    networks:
+      - backend-network
 
 networks:
-  api-network:
+  backend-network:
     driver: bridge
 
-# volumes:
-#   mysql_data:
+volumes:
+  mysql_data:
