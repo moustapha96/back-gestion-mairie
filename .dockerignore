@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Symfony
+/var/
+/vendor/
+.env.local
+.env.*.local
+
+# Tests
+/phpunit.xml
+/tests/
+
+# Logs
+*.log
+
+# Cache
+/var/cache/*
+!/var/cache/.gitkeep
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Autres
+*.bak
+*.tmp
+*.cache

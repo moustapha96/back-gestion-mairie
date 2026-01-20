@@ -12,75 +12,37 @@ Ce guide explique comment déployer l'application avec Docker, OPcache activé e
 
 ### 1. Configuration de l'environnement
 
-Créez un fichier `.env` à la racine du projet **(ou configurez les variables dans votre orchestrateur Docker)** avec au minimum les variables suivantes :
+Créez un fichier `.env` à la racine du projet avec les variables nécessaires :
 
 ```env
 APP_ENV=prod
 APP_DEBUG=0
-
-# Clé secrète Symfony
-APP_SECRET=changer_cette_valeur
-
-# Base principale (demandes de terrain)
-DATABASE_URL="mysql://gl_user:Kaolack@2025@mysql:3306/demande_terrain?serverVersion=8.0"
-
-# Base électeurs (si utilisée)
-ELECTEURS_DATABASE_URL="mysql://user:password@host:3306/election2?serverVersion=8.0"
-
-# JWT (les fichiers doivent exister dans config/jwt)
+DATABASE_URL=mysql://user:password@host:3306/database
+ELECTEURS_DATABASE_URL=mysql://user:password@host:3306/database_electeurs
 JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
 JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
-JWT_PASSPHRASE=votre_passphrase_secrete
-
-# Envoi des emails (adapter au provider réel)
-MAILER_DSN="smtp://user:password@smtp.example.com:587"
-
-# wkhtmltopdf (génération PDF)
-WKHTMLTOPDF_PATH=/usr/local/bin/wkhtmltopdf
-
-# URL publique de base pour les fichiers (tfs, documents)
-# Exemple : URL du backend routé par Nginx
-APP_FILE_BASE_URL="https://backendgl.kaolackcommune.sn"
+JWT_PASSPHRASE=your_passphrase
 ```
 
-> **Remarque :**
-> - `DATABASE_URL` et `ELECTEURS_DATABASE_URL` doivent être cohérentes avec vos bases MySQL en production (vous pouvez utiliser les dumps dans `db/` si besoin).
-> - Les clés JWT doivent être générées **avant** le premier démarrage en prod :
->   ```bash
->   php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
->   ```
-> - Assurez‑vous que `WKHTMLTOPDF_PATH` pointe bien vers le binaire wkhtmltopdf installé sur le serveur.
-
-### 2. Préparation de la base de données
-
-- **Option 1 – Schéma à partir des migrations (recommandé pour une nouvelle instance)**  
-  Dans le conteneur PHP, exécutez :
-  ```bash
-  docker-compose exec php php bin/console doctrine:migrations:migrate --no-interaction --env=prod
-  ```
-
-- **Option 2 – Import d’une base existante (pour répliquer un environnement déjà en place)**  
-  Vous pouvez utiliser les dumps fournis dans le dossier `db/` (`demande_terrain.sql`, `elections2.sql`) avec `mysql` ou phpMyAdmin, en veillant à les importer dans les bonnes bases de données.
-
-### 3. Construction de l'image Docker
+### 2. Construction de l'image Docker
 
 ```bash
 docker-compose build
 ```
 
-### 4. Démarrage des conteneurs
+### 3. Démarrage des conteneurs
 
 ```bash
 docker-compose up -d
 ```
 
-### 5. Configuration Nginx
+### 4. Configuration Nginx
 
 Copiez la configuration Nginx renforcée :
 
 ```bash
-sudo cp nginx/backendgl.kaolackcommune.sn.conf /etc/nginx/sites-available/apidemande.kaolackcommune.sn
-sudo ln -s /etc/nginx/sites-available/apidemande.kaolackcommune.sn /etc/nginx/sites-enabled/
+sudo cp nginx/backendgl.kaolackcommune.sn.conf /etc/nginx/sites-available/backendgl.kaolackcommune.sn
+sudo ln -s /etc/nginx/sites-available/backendgl.kaolackcommune.sn /etc/nginx/sites-enabled/
 ```
 
 Testez la configuration :
@@ -95,7 +57,7 @@ Rechargez Nginx :
 sudo systemctl reload nginx
 ```
 
-### 6. Configuration des permissions
+### 5. Configuration des permissions
 
 ```bash
 docker-compose exec php chown -R www-data:www-data /var/www/html
@@ -103,13 +65,13 @@ docker-compose exec php chmod -R 755 /var/www/html
 docker-compose exec php chmod -R 775 /var/www/html/var
 ```
 
-### 7. Installation des dépendances (si nécessaire)
+### 6. Installation des dépendances (si nécessaire)
 
 ```bash
 docker-compose exec php composer install --no-dev --optimize-autoloader
 ```
 
-### 8. Cache Symfony (production)
+### 7. Cache Symfony (production)
 
 ```bash
 docker-compose exec php php bin/console cache:clear --env=prod

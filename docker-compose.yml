@@ -9,10 +9,9 @@ services:
     ports:
       - "127.0.0.1:9000:9000"
     restart: unless-stopped
-    # On aligne le chemin interne du conteneur sur celui utilisé par Nginx (/var/www/gestion-demande)
-    working_dir: /var/www/gestion-demande
+    working_dir: /var/www/html
     volumes:
-      - .:/var/www/gestion-demande
+      - .:/var/www/html
     environment:
       APP_ENV: prod
       APP_DEBUG: 0
