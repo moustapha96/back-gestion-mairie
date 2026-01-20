@@ -31,12 +31,7 @@ doctrine:
         prefix: 'App\Entity'
         alias: App
       
-      GesdinetJWTRefreshTokenBundle:
-        type: xml
-        dir: '%kernel.project_dir%/vendor/gesdinet/jwt-refresh-token-bundle/Resources/config/doctrine'
-        is_bundle: false
-        prefix: 'Gesdinet\JWTRefreshTokenBundle\Entity'
-        alias: GesdinetJWTRefreshTokenBundle
+      # Mapping GesdinetJWTRefreshTokenBundle supprimé (refresh token désactivé)
 
 when@test:
   doctrine:

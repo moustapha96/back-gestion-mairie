@@ -18,4 +18,3 @@ api_doc:
     controller: api_platform.swagger_ui.action
 
 # config/routes.yaml
-# La route pour le refresh token est gérée automatiquement par le bundle dans config/routes/gesdinet_jwt_refresh_token.yaml
