@@ -36,12 +36,15 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
         try {
             $username = $user->getUserIdentifier();
 
-            // Supprimer les anciens tokens de cet utilisateur pour éviter l'accumulation
-            // Utilisation d'une requête DQL pour une suppression directe plus efficace
+            // Supprimer uniquement les tokens expirés ou invalides de cet utilisateur
+            // On garde les tokens valides pour permettre plusieurs sessions
+            $now = new \DateTime();
             $this->em->createQueryBuilder()
                 ->delete(RefreshToken::class, 'rt')
                 ->where('rt.username = :username')
+                ->andWhere('rt.valid < :now')
                 ->setParameter('username', $username)
+                ->setParameter('now', $now)
                 ->getQuery()
                 ->execute();
 
@@ -52,15 +55,19 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
             // Créer un nouveau refresh token via le RefreshTokenManager
             // Le manager utilise notre classe App\Entity\RefreshToken configurée
             $refreshToken = $this->refreshTokenManager->create();
+            
+            if (!$refreshToken instanceof RefreshToken) {
+                // Si le manager ne retourne pas notre classe, on ne peut pas continuer
+                return;
+            }
+            
             $refreshToken->setUsername($username);
             $refreshToken->setRefreshToken(); // génère un token unique
             $refreshToken->setValid($ttl);
             
-            // S'assurer que created_at est toujours défini
-            // Le constructeur de RefreshToken l'initialise déjà, mais on le force pour être sûr
-            if ($refreshToken instanceof RefreshToken && \method_exists($refreshToken, 'setCreatedAt')) {
-                $refreshToken->setCreatedAt(new \DateTime());
-            }
+            // S'assurer que created_at est toujours défini avant la sauvegarde
+            // Le constructeur l'initialise, mais on le force pour être absolument sûr
+            $refreshToken->setCreatedAt(new \DateTime());
 
             // Sauvegarder via le RefreshTokenManager (gère la persistance correctement)
             $this->refreshTokenManager->save($refreshToken);
@@ -71,7 +78,10 @@ class JwtLoginSuccessSubscriber implements EventSubscriberInterface
         } catch (\Throwable $e) {
             // En cas d'erreur, on continue sans bloquer l'authentification
             // Le token JWT principal est déjà dans la réponse
-            // L'erreur est silencieuse pour ne pas perturber l'utilisateur
+            // On peut logger l'erreur pour le débogage en développement
+            if ($_ENV['APP_ENV'] === 'dev') {
+                error_log('Erreur lors de la création du refresh token: ' . $e->getMessage());
+            }
         }
     }
 }

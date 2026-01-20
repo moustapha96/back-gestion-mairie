@@ -1,0 +1,510 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil API - Routes principales{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #020617;
+            --bg-card-alt: #111827;
+            --primary: #22c55e;
+            --primary-soft: rgba(34, 197, 94, 0.15);
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148, 163, 184, 0.3);
+            --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.75);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+            color: var(--text-main);
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 1100px;
+            background: radial-gradient(circle at top left, rgba(55, 65, 81, 0.6), rgba(15, 23, 42, 0.95));
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .shell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                    radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 55%),
+                    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 55%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .shell-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr);
+        }
+
+        .column {
+            padding: 2.5rem 2.75rem;
+        }
+
+        .column--accent {
+            border-left: 1px solid rgba(148, 163, 184, 0.4);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.4));
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.7rem 0.25rem 0.3rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .badge-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 30%, #bbf7d0, #22c55e);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+        }
+
+        .title {
+            margin: 1.4rem 0 0.8rem;
+            font-size: 2rem;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+        }
+
+        .title span {
+            background: linear-gradient(130deg, #bbf7d0, #22c55e, #38bdf8);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            margin: 0 0 1.6rem;
+            font-size: 0.98rem;
+            color: var(--text-muted);
+            max-width: 32rem;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.9);
+        }
+
+        .pill-strong {
+            border-color: rgba(34, 197, 94, 0.7);
+            background: rgba(22, 163, 74, 0.1);
+            color: #bbf7d0;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease-out;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: radial-gradient(circle at 0 0, #4ade80, #22c55e);
+            color: #022c22;
+            border-color: rgba(34, 197, 94, 0.9);
+            box-shadow:
+                    0 0 0 1px rgba(34, 197, 94, 0.45),
+                    0 18px 30px rgba(22, 163, 74, 0.55);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow:
+                    0 0 0 1px rgba(34, 197, 94, 0.9),
+                    0 22px 40px rgba(22, 163, 74, 0.75);
+        }
+
+        .btn-ghost {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-main);
+            border-color: rgba(148, 163, 184, 0.6);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(15, 23, 42, 1);
+            border-color: rgba(209, 213, 219, 0.95);
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .hint-kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            padding: 0.18rem 0.4rem;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            font-size: 0.78rem;
+            color: #e5e7eb;
+        }
+
+        .routes-card {
+            border-radius: 18px;
+            border: 1px solid var(--border-subtle);
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+            padding: 1.5rem 1.7rem 1.6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .routes-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.15), transparent 60%);
+            pointer-events: none;
+        }
+
+        .routes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .routes-title {
+            font-size: 0.98rem;
+            font-weight: 600;
+        }
+
+        .routes-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .routes-tag {
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid rgba(52, 211, 153, 0.6);
+            background: rgba(6, 95, 70, 0.25);
+            font-size: 0.78rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #a7f3d0;
+        }
+
+        .routes-tag-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 30%, #bbf7d0, #22c55e);
+        }
+
+        .routes-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            border-radius: 14px;
+            border: 1px solid rgba(55, 65, 81, 0.4);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
+            overflow: hidden;
+        }
+
+        .route-item {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.75rem 1rem;
+            padding: 0.7rem 1rem;
+            align-items: center;
+        }
+
+        .route-item:nth-child(even) {
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .route-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            font-size: 0.75rem;
+            padding: 0.22rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(30, 64, 175, 0.2);
+            border: 1px solid rgba(96, 165, 250, 0.7);
+            color: #bfdbfe;
+            white-space: nowrap;
+        }
+
+        .route-badge--post {
+            background: rgba(22, 163, 74, 0.18);
+            border-color: rgba(34, 197, 94, 0.8);
+            color: #bbf7d0;
+        }
+
+        .route-badge--get {
+            background: rgba(37, 99, 235, 0.18);
+            border-color: rgba(59, 130, 246, 0.85);
+            color: #dbeafe;
+        }
+
+        .route-main {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .route-path {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #e5e7eb;
+        }
+
+        .route-label {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+        }
+
+        .route-detail {
+            grid-column: 1 / -1;
+            font-size: 0.78rem;
+            color: rgba(148, 163, 184, 0.95);
+        }
+
+        .routes-footer {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .routes-footer a {
+            color: #a5b4fc;
+            text-decoration: none;
+        }
+
+        .routes-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            .shell-inner {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .column {
+                padding: 1.8rem 1.7rem;
+            }
+
+            .column--accent {
+                border-left: none;
+                border-top: 1px solid rgba(148, 163, 184, 0.45);
+            }
+
+            .title {
+                font-size: 1.6rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page {
+                padding: 1.5rem 1rem;
+            }
+
+            .shell {
+                border-radius: 18px;
+            }
+
+            .column {
+                padding: 1.5rem 1.3rem;
+            }
+
+            .routes-card {
+                padding: 1.2rem 1.25rem;
+            }
+
+            .route-item {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="page">
+        <div class="shell">
+            <div class="shell-inner">
+                <section class="column">
+                    <div class="badge">
+                        <span class="badge-dot"></span>
+                        API Backend - Kaolack Commune
+                    </div>
+
+                    <h1 class="title">
+                        Portail
+                        <span>des routes principales</span>
+                    </h1>
+
+                    <p class="subtitle">
+                        Cette page présente les points d’entrée les plus utilisés de l’API
+                        (authentification, renouvellement de token, import des demandes, documentation…).
+                        Utilisez ces liens comme base pour l’intégration front ou les tests.
+                    </p>
+
+                    <div class="pill-row">
+                        <div class="pill pill-strong">
+                            <span class="pill-dot"></span>
+                            Symfony 6.4 & API Platform 3
+                        </div>
+                        <div class="pill">
+                            <span class="pill-dot"></span>
+                            Authentification JWT + Refresh Token
+                        </div>
+                        <div class="pill">
+                            <span class="pill-dot"></span>
+                            Import demandes de terrain
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <a href="/api/doc" class="btn btn-primary">
+                            Ouvrir la documentation complète
+                        </a>
+                        <a href="/api/login" class="btn btn-ghost">
+                            Endpoint de connexion
+                        </a>
+                    </div>
+
+                    <div class="hint">
+                        <span>Astuce :</span>
+                        <span class="hint-kbd">/api/doc</span>
+                        <span>pour explorer toutes les routes avec Swagger / API Platform.</span>
+                    </div>
+                </section>
+
+                <section class="column column--accent">
+                    <div class="routes-card">
+                        <header class="routes-header">
+                            <div>
+                                <div class="routes-title">Routes les plus importantes</div>
+                                <div class="routes-subtitle">
+                                    Points d’entrée critiques pour le front et les intégrations externes.
+                                </div>
+                            </div>
+                            <div class="routes-tag">
+                                <span class="routes-tag-dot"></span>
+                                API prête pour la production
+                            </div>
+                        </header>
+
+                        <ul class="routes-list">
+                            {% for route in routes_importantes %}
+                                <li class="route-item">
+                                    <div>
+                                        {% set method = route.method|upper %}
+                                        <span class="route-badge {{ method == 'POST' ? 'route-badge--post' : '' }} {{ method == 'GET' ? 'route-badge--get' : '' }}">
+                                            {{ method }}
+                                        </span>
+                                    </div>
+                                    <div class="route-main">
+                                        <div class="route-path">
+                                            {{ route.path }}
+                                        </div>
+                                        <div class="route-label">
+                                            {{ route.label }}
+                                        </div>
+                                    </div>
+                                    <div class="route-detail">
+                                        {{ route.detail }}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                        <footer class="routes-footer">
+                            <div>
+                                Pour la liste exhaustive des endpoints, consultez
+                                <a href="/api/doc">/api/doc</a>.
+                            </div>
+                            <div>
+                                Besoin d’un nouveau point d’entrée ? Ajoutez un contrôleur
+                                Symfony ou une ressource API Platform.
+                            </div>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

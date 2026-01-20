@@ -13,7 +13,7 @@ use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken as BaseRefreshToken;
 #[ORM\HasLifecycleCallbacks]
 class RefreshToken extends BaseRefreshToken
 {
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['default' => 'CURRENT_TIMESTAMP'])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: false, options: ['default' => 'CURRENT_TIMESTAMP'])]
     private ?\DateTime $createdAt = null;
 
     public function __construct()
@@ -23,9 +23,12 @@ class RefreshToken extends BaseRefreshToken
     }
 
     #[ORM\PrePersist]
+    #[ORM\PreUpdate]
     public function setCreatedAtValue(): void
     {
         // S'assurer que created_at est toujours défini avant la persistance
+        // Si c'est une nouvelle entité, on définit la date de création
+        // Si c'est une mise à jour, on ne modifie pas created_at (il reste à sa valeur initiale)
         if ($this->createdAt === null) {
             $this->createdAt = new \DateTime();
         }

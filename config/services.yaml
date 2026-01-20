@@ -48,10 +48,17 @@ services:
     App\EventListener\AuthenticationSuccessListener:
         tags:
             - {
-                
                 name: kernel.event_listener,
                 event: lexik_jwt_authentication.on_authentication_success,
                 method: onAuthenticationSuccessResponse,
+                priority: 0,
+            }
+    
+    App\EventSubscriber\JwtLoginSuccessSubscriber:
+        tags:
+            - {
+                name: kernel.event_subscriber,
+                priority: -10,
             }
     
     App\services\DataConfigurationService:

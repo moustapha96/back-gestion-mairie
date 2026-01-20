@@ -14,7 +14,7 @@ api_login:
     methods: ['POST']
 
 api_doc:
-    path: /
+    path: /api/doc
     controller: api_platform.swagger_ui.action
 
 # config/routes.yaml
