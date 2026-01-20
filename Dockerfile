@@ -69,8 +69,8 @@ RUN { \
     echo 'date.timezone = Africa/Dakar'; \
     } > /usr/local/etc/php/conf.d/custom.ini
 
-# Création du répertoire de travail
-WORKDIR /var/www/html
+# Création du répertoire de travail (aligné avec Nginx : /var/www/gestion-demande)
+WORKDIR /var/www/gestion-demande
 
 # Copie des fichiers de l'application
 COPY . .
@@ -83,9 +83,9 @@ RUN if [ "$APP_ENV" = "prod" ]; then \
     fi
 
 # Définition des permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 775 /var/www/html/var
+RUN chown -R www-data:www-data /var/www/gestion-demande \
+    && chmod -R 755 /var/www/gestion-demande \
+    && chmod -R 775 /var/www/gestion-demande/var
 
 # Exposer le port 9000 pour PHP-FPM
 EXPOSE 9000
