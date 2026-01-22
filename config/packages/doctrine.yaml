@@ -31,6 +31,8 @@ doctrine:
         prefix: 'App\Entity'
         alias: App
       
+      # Mapping GesdinetJWTRefreshTokenBundle supprimé (refresh token désactivé)
+
 when@test:
   doctrine:
     dbal:

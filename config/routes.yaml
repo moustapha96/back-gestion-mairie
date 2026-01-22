@@ -16,3 +16,5 @@ api_login:
 api_doc:
     path: /api/doc
     controller: api_platform.swagger_ui.action
+
+# config/routes.yaml
