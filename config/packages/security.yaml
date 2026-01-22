@@ -38,8 +38,7 @@ security:
             provider: users
             entry_point: jwt
             jwt: ~
-            refresh_jwt:
-                check_path: /api/token/refresh
+           
 
     access_control:
         - { path: ^/$, roles: PUBLIC_ACCESS }

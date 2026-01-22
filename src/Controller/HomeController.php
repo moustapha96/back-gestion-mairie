@@ -19,19 +19,13 @@ class HomeController extends AbstractController
                 'method' => 'POST',
                 'path'   => '/api/login',
                 'label'  => 'Authentification (JWT)',
-                'detail' => 'Permet de se connecter et de récupérer un token JWT + refresh token.',
-            ],
-            [
-                'method' => 'POST',
-                'path'   => '/api/token/refresh',
-                'label'  => 'Renouvellement du token (Refresh Token)',
-                'detail' => 'Permet d\'obtenir un nouveau token JWT à partir d\'un refresh token valide.',
+                'detail' => 'Permet de se connecter et de récupérer un token JWT.',
             ],
             [
                 'method' => 'GET',
                 'path'   => '/api/doc',
-                'label'  => 'Documentation de l’API (Swagger / API Platform)',
-                'detail' => 'Interface graphique pour explorer et tester toutes les routes de l’API.',
+                'label'  => "Documentation de l'API (Swagger / API Platform)",
+                'detail' => "Interface graphique pour explorer et tester toutes les routes de l'API.",
             ],
             [
                 'method' => 'POST',

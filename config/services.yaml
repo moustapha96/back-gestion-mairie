@@ -54,13 +54,6 @@ services:
                 priority: 0,
             }
     
-    App\EventSubscriber\JwtLoginSuccessSubscriber:
-        tags:
-            - {
-                name: kernel.event_subscriber,
-                priority: -10,
-            }
-    
     App\services\DataConfigurationService:
         arguments:
             $configurationRepository: '@App\Repository\ConfigurationRepository'
