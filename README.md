@@ -201,3 +201,21 @@ $env:XDEBUG_MODE="off"
 # régénère les paires RSA 4096 avec ta passphrase
 php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
 
+
+'createdAt'     => $log->getCreatedAt()->format(\DateTimeInterface::ATOM) 
+                                || $log->getCreatedAt()->format('c'),
+
+# régénère les paires RSA 4096 avec ta passphrase
+php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
+
+
+
+import : 
+
+docker exec -i gestion-demande-mysql mysql -u gl_user -pKaolack@2025 demande_terrain < db/base_complete.sql
+
+
+-----------
+docker exec -it gestion-demande-php bash
+php bin/console doctrine:mapping:info
+php bin/console doctrine:schema:validate
