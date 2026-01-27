@@ -154,16 +154,6 @@ final class AttributionParcelleService
         $a->transitionTo($to);
         $this->em->persist($a);
 
-        if (class_exists(\App\Entity\AttributionParcelleStatusHistory::class)) {
-            $h = new \App\Entity\AttributionParcelleStatusHistory();
-            $h->setAttribution($a);
-            $h->setFromStatus($from);
-            $h->setToStatus($to);
-            $h->setChangedAt(new \DateTime());
-            $h->setComment($comment);
-            $this->em->persist($h);
-        }
-
         $this->em->flush();
         return $a;
     }
