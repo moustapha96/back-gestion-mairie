@@ -39,6 +39,7 @@ class DoctrineAuditSubscriber
                 'entityId'    => method_exists($entity, 'getId') ? (string)$entity->getId() : null,
                 'changes'     => $this->toScalarArray($uow->getEntityChangeSet($entity)),
                 'status'      => 'SUCCESS',
+                'created_at'      => (new \DateTime())->format('Y-m-d H:i:s'),
             ]);
         }
 

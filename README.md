@@ -215,6 +215,8 @@ import :
 docker exec -i gestion-demande-mysql mysql -u gl_user -pKaolack@2025 demande_terrain < db/base_complete.sql
 
 
+docker exec -i gestion-demande-mysql mysql -u gl_user -pKaolack@2025 election2 < db/elections2.sql
+
 -----------
 docker exec -it gestion-demande-php bash
 php bin/console doctrine:mapping:info

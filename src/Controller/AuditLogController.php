@@ -68,8 +68,7 @@ final class AuditLogController extends AbstractController
                 'metadata'      => $log->getMetadata(),
                 'status'        => $log->getStatus(),
                 'message'       => $log->getMessage(),
-                'createdAt'     => $log->getCreatedAt()->format(\DateTimeInterface::ATOM) 
-                                || $log->getCreatedAt()->format('c'),
+                'createdAt'     => (new \DateTime())->format('Y-m-d H:i:s'),
             ];
         }, $result['items']);
 
