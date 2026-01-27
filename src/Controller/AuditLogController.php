@@ -17,7 +17,7 @@ final class AuditLogController extends AbstractController
         // Query params
         $page       = (int)$request->query->get('page', 1);
         $size       = (int)$request->query->get('size', 20);
-        $sort       = (string)$request->query->get('sort', 'createdAt,DESC'); // ex: event,ASC
+        $sort       = (string)$request->query->get('sort', 'id,DESC'); // ex: event,ASC
 
         $event      = $request->query->get('event');
         $actorId    = $request->query->get('actorId');
@@ -69,7 +69,7 @@ final class AuditLogController extends AbstractController
                 'status'        => $log->getStatus(),
                 'message'       => $log->getMessage(),
                 // 'createdAt'     => (new \DateTime())->format('Y-m-d H:i:s'),
-                'createdAt'     => $log->getCreatedAt() ? $log->getCreatedAt()->format('Y-m-d H:i:s') : null,
+                // 'createdAt'     => $log->getCreatedAt() ? $log->getCreatedAt()->format('Y-m-d H:i:s') : null,
 
             ];
         }, $result['items']);
