@@ -25,7 +25,7 @@ class Article
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $content = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(targetEntity: CategorieArticle::class, inversedBy: 'articles')]
@@ -38,6 +38,14 @@ class Article
 
     #[ORM\OneToMany(mappedBy: 'article', targetEntity: ImageArticle::class, cascade: ['persist', 'remove'])]
     private Collection $images;
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        if ($this->createdAt === null) {
+            $this->createdAt = new \DateTimeImmutable();
+        }
+    }
 
     public function __construct()
     {
