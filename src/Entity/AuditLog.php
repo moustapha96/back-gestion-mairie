@@ -286,9 +286,6 @@ class AuditLog
 
     public function getCreatedAt(): \DateTimeImmutable
     {
-        if ($this->createdAt === null) {
-            $this->createdAt = new \DateTimeImmutable();
-        }
         return $this->createdAt;
     }
 
