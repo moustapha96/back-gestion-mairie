@@ -30,6 +30,8 @@ class AuditLogger
             'metadata'       => isset($data['metadata']) ? json_encode($data['metadata']) : null,
             'status'         => $data['status']        ?? null,
             'message'        => $data['message']       ?? null,
+            'created_at'      => (new \DateTime())->format('Y-m-d H:i:s'),
+
            
         ], [
             'integer', 'string', 'string', 'string', 'string', 'string', 'string',
