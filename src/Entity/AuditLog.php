@@ -78,7 +78,7 @@ class AuditLog
     private ?string $message = null;
 
     #[ORM\Column(type: "datetime_immutable")]
-    private \DateTimeImmutable $createdAt;
+    public \DateTimeImmutable $createdAt;
 
     public function __construct()
     {
@@ -286,8 +286,8 @@ class AuditLog
 
     public function getCreatedAt(): \DateTimeImmutable
     {
-        if (!isset($this->createdAt)) {
-           return new \DateTimeImmutable();
+        if ($this->createdAt === null) {
+            $this->createdAt = new \DateTimeImmutable();
         }
         return $this->createdAt;
     }
