@@ -202,6 +202,7 @@ $env:XDEBUG_MODE="off"
 php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
 
 
+<<<<<<< Updated upstream
 'createdAt'     => $log->getCreatedAt()->format(\DateTimeInterface::ATOM) 
                                 || $log->getCreatedAt()->format('c'),
 
@@ -209,14 +210,19 @@ php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
 php bin/console lexik:jwt:generate-keypair --overwrite --skip-if-exists
 
 
+=======
+>>>>>>> Stashed changes
 
 import : 
 
 docker exec -i gestion-demande-mysql mysql -u gl_user -pKaolack@2025 demande_terrain < db/base_complete.sql
 
 
+<<<<<<< Updated upstream
 docker exec -i gestion-demande-mysql mysql -u gl_user -pKaolack@2025 election2 < db/elections2.sql
 
+=======
+>>>>>>> Stashed changes
 -----------
 docker exec -it gestion-demande-php bash
 php bin/console doctrine:mapping:info
