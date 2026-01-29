@@ -32,7 +32,7 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
     order: ["id" => "DESC"],
     paginationEnabled: false,
 )]
-#[ORM\Table(name: '`gs_mairie_demande_terrains`')]
+#[ORM\Table(name: 'gs_mairie_demandes')]
 
 
 class Request
