@@ -68,13 +68,7 @@ final class AuditLogController extends AbstractController
                 'metadata'      => $log->getMetadata(),
                 'status'        => $log->getStatus(),
                 'message'       => $log->getMessage(),
-<<<<<<< Updated upstream
-                'createdAt'     =>  null,
-
-=======
-                'createdAt'     => $log->getCreatedAt()->format(\DateTimeInterface::ATOM) 
-                                || $log->getCreatedAt()->format('c'),
->>>>>>> Stashed changes
+                'createdAt'     => $log->getCreatedAt() ? $log->getCreatedAt()->format(\DateTimeInterface::ATOM) : null,
             ];
         }, $result['items']);
 
